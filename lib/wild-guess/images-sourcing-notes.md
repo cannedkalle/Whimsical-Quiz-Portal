@@ -93,3 +93,4 @@ and filled 22 licenses the workers had left uncertain.
 - count-termites-in-a-tall-mound: File:Litchfield National Park (AU), Magnetic Termite Mounds -- 2019 -- 3721.jpg — CC BY-SA 4.0, Dietmar Rabich. Verified 2026-11-01.
 - count-microbes-in-earths-oceans: File:Emiliania huxleyi coccolithophore (PLoS).png — CC BY 2.5, Alison R. Taylor (University of North Carolina Wilmington Microscopy Facility). Verified 2026-11-01.
 - count-taste-buds-on-one-tongue: File:Tongue and taste buds.jpg (replaced mouth-interior photo 2026-11-01; new image centers on the tongue) — CC BY-SA 3.0, Saurabh R. Patil. Verified 2026-11-01.
+- count-needles-on-a-pine-tree: File:Pine needles close-up (Unsplash).jpg (replaced PDF scan 2026-11-01) — CC0, Roman Kraft. Verified 2026-11-01.
