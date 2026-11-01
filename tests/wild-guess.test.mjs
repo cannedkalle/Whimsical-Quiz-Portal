@@ -62,22 +62,17 @@ test('proposal pool contains 100 clear, non-overlapping comparisons across four 
 });
 
 test('subject pool deals close, non-overlapping, non-part-whole matchups', () => {
-  assert.equal(subjects.length, 193);
+  assert.equal(subjects.length, 192);
   assert.equal(new Set(subjects.map((subject) => subject.id)).size, subjects.length);
   assert.equal(new Set(subjects.map((subject) => `${subject.category}:${canonicalConceptKey(subject.label)}`)).size, subjects.length);
   assert.deepEqual(subjects.filter((subject) => /\b(big|large|huge|long|full-grown|giant)\b/i.test(subject.label) && !/\bgiant tortoise\b/i.test(subject.label)).map((subject) => subject.label), []);
   assert.ok(subjects.filter((subject) => subject.category === 'frequency' && /wingbeats/i.test(subject.label)).length <= 5);
   assert.equal(subjects.some((subject) => subject.label === 'Two meals eaten by one person'), false);
   assert.equal(subjects.some((subject) => subject.label === 'Two ticks of a clock'), false);
+  assert.deepEqual(subjectCategories, ['count', 'duration'], 'only reviewed categories deal');
   assert.deepEqual(Object.fromEntries(subjectCategories.map((category) => [category, validSubjectPairs(category).length])), {
     count: 232,
     duration: 156,
-    weight: 41,
-    frequency: 17,
-    length: 13,
-    area: 9,
-    volume: 13,
-    speed: 9,
   });
   const byId = new Map(subjects.map((subject) => [subject.id, subject]));
   for (const [a, b] of [
@@ -114,11 +109,10 @@ test('frequency no longer leans on the blue whale heartbeat, and retired subject
     assert.equal(subjects.some((subject) => subject.label === label), false, label);
   }
   // Un-retired by Kai's feedback: waves and the Olympic pool are live again.
-  for (const label of ['Two waves reaching one beach', 'The water in an Olympic competition pool', 'Sardines in a bait ball', 'A banana peel breaking down in compost', 'A plastic bottle breaking down in the ocean']) {
+  for (const label of ['Two waves reaching one beach', 'The water in an Olympic competition pool', 'Sardines in a bait ball', 'A slime mold eating a banana peel', 'A plastic bottle breaking down in the ocean']) {
     assert.equal(subjects.some((subject) => subject.label === label), true, label);
   }
-  // A fact may live in the database without pairing yet (the Moon's age).
-  assert.equal(subjects.some((subject) => subject.label === 'The age of the Moon'), true);
+  // Retired 2026-11-01 (Kai): the Moon's age is trivia, not estimation.
 });
 
 test('generator deals quality matchups, spaces repeats, and never runs dry', async () => {

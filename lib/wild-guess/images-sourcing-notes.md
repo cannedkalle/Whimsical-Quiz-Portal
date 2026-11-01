@@ -58,3 +58,37 @@ and filled 22 licenses the workers had left uncertain.
   Apollo 17 Earth photo (weight of Earth; distance around Earth), and the
   NOAA blue whale photo (all blue whales' weight; blue whale heartbeats;
   a blue whale's weight).
+
+- duration-high-fiving-every-kid-in-your-school: File:US Navy 110804-N-DR144-456 Master Chief Petty Officer of the Navy (MCPON) Rick D. West high fives Commander, Naval Surface Force U.S. Pacific Fleet.jpg — Public domain, U.S. Navy photo by Mass Communication Specialist 2nd Class James R. Evans. Verified 2026-11-01.
+- duration-ants-carrying-away-your-picnic-sandwich: File:Ants carrying food.jpg — CC0, DKDEVS. Verified 2026-11-01.
+- duration-stacking-pennies-to-the-top-of-the-empire-state-building: File:Stack of pennies.jpg — CC0, Doorknob747. Verified 2026-11-01.
+- duration-a-caterpillar-crawling-up-a-beanstalk-to-the-clouds: File:Caterpillar on leaf 03.jpg — CC BY-SA 4.0, Sabina Bajracharya. Verified 2026-11-01.
+- duration-a-spider-spinning-a-web-over-your-whole-house: File:Spider web Luc Viatour.jpg — CC BY-SA 3.0, Luc Viatour. Verified 2026-11-01.
+- duration-blowing-up-a-hot-air-balloon-with-your-lungs: File:Cappadocia Balloon Inflating Wikimedia Commons.JPG — CC BY-SA 3.0, Benh LIEU SONG (Flickr). Verified 2026-11-01.
+- duration-an-ice-hotel-melting-in-spring: File:Icehotel entrance.jpg — CC BY-SA 2.5, Markus Bernet. Verified 2026-11-01.
+- duration-reading-all-seven-harry-potter-books-out-loud: File:Stack of Books for decor.jpg — CC BY-SA 4.0, mycurrency.com. Verified 2026-11-01.
+- duration-counting-to-one-million-out-loud: File:Child calculating with fingers.jpg — CC BY-SA 4.0, Jeuwre. Verified 2026-11-01.
+- duration-a-termite-eating-a-pencil: File:Coptotermes formosanus shiraki USGov k8204-7.jpg — Public domain, Photo by Scott Bauer. Verified 2026-11-01.
+- duration-a-sloth-walking-a-marathon: File:Bradypus.jpg — Public domain, Stefan Laube (Tauchgurke). Verified 2026-11-01.
+- duration-mowing-all-of-central-park-alone: File:Sheep Meadow Central Park NYC 2007 001.jpg — Public domain, Gryffindor. Verified 2026-11-01.
+- duration-a-penguin-waddling-all-the-way-around-antarctica: File:Aptenodytes forsteri -Snow Hill Island, Antarctica -adults and juvenile-8.jpg — CC BY 2.0, Ian Duffy from UK. Verified 2026-11-01.
+- duration-grass-swallowing-a-parked-car: File:Abandoned cars overgrown with plants in a natural setting.jpg — CC BY 2.0, Shixart1985. Verified 2026-11-01.
+- duration-a-robot-vacuum-cleaning-all-of-heathrow-airport: File:Roomba original.jpg — CC BY 4.0, Larry D. Moore. Verified 2026-11-01.
+- duration-walking-to-the-moon: File:Full moon partially obscured by atmosphere.jpg — Public domain, NASA. Verified 2026-11-01.
+- duration-a-message-in-a-bottle-drifting-across-the-pacific: File:Message in a bottle - geograph.org.uk - 1095870.jpg — CC BY-SA 2.0, Ashley Dace. Verified 2026-11-01.
+- duration-growing-a-beard-down-to-your-toes: File:Sarwan Singh - Longest Beard World Records 2014 in India.JPG — CC BY-SA 3.0, Paavans. Verified 2026-11-01.
+- duration-painting-the-white-house-with-an-art-brush: File:North Façade White House.JPG — Public domain, Nishkid64. Verified 2026-11-01.
+- duration-a-mail-carrier-delivering-to-every-house-in-america: File:CAMPBELL, MRS. PARMLEE. WOMAN MAIL CARRIER. DELIVERING MAIL TO MRS. NELLIE McGRATH LCCN2016868589.jpg — Public domain, Harris & Ewing, photographer. Verified 2026-11-01.
+- duration-building-the-great-pyramid-brick-by-brick-all-by-yourself: File:Great Pyramid of Giza.jpg — CC BY-SA 3.0, kallerna. Verified 2026-11-01.
+- duration-a-beaver-building-the-hoover-dam: File:American Beaver.jpg — CC BY-SA 2.0, Steve from Washington, DC, USA. Verified 2026-11-01.
+- duration-a-dog-digging-a-tunnel-to-china: File:Dog (Flatcoated retriever) digging a hole on the beach.jpg — CC BY-SA 4.0, Hondenfun.nl. Verified 2026-11-01.
+- duration-a-lumberjack-chopping-down-the-whole-black-forest-alone: File:Madera Sugar Pine Company fellers undercut 1911.jpg — Public domain, Madera Sugar Pine Company. Verified 2026-11-01.
+- duration-a-dripping-faucet-filling-an-olympic-pool: File:Dripping Tap.jpg — CC BY-SA 4.0, Ramani Marimuthu. Verified 2026-11-01.
+- duration-carving-mount-rushmore-with-a-chisel: File:Mount Rushmore2.jpg — Public domain, Rise Studio, Rapid City, S. Dak. Copyright not renewed. Verified 2026-11-01.
+- duration-knitting-a-scarf-for-planet-earth: File:Knitting needles and yarn (Unsplash).jpg — CC0, Olliss fomaolea. Verified 2026-11-01.
+- duration-a-slime-mold-eating-a-banana-peel: File:Slime mold stemonitis fusca.jpg — CC BY-SA 3.0, Farnishk. Verified 2026-11-01.
+
+- count-mcdonalds-restaurants-worldwide: File:World's Largest Entertainment McDonald's - exterior.jpg — CC0, Mx. Granger. Verified 2026-11-01.
+- count-leaves-on-an-oak-tree: File:New oak leaves with female flowers.jpg — CC0, W.carter. Verified 2026-11-01.
+- count-termites-in-a-tall-mound: File:Litchfield National Park (AU), Magnetic Termite Mounds -- 2019 -- 3721.jpg — CC BY-SA 4.0, Dietmar Rabich. Verified 2026-11-01.
+- count-microbes-in-earths-oceans: File:Emiliania huxleyi coccolithophore (PLoS).png — CC BY 2.5, Alison R. Taylor (University of North Carolina Wilmington Microscopy Facility). Verified 2026-11-01.
