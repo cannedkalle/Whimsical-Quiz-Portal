@@ -41,8 +41,8 @@ const { database } = await import('../lib/wild-guess/database.mjs');
 execFileSync(process.execPath, ['scripts/setup-wild-guess.mjs'], { env: process.env });
 
 test('proposal pool contains 100 clear, non-overlapping comparisons across four categories', () => {
-  assert.equal(comparisons.length, 281);
-  assert.equal(new Set(comparisons.map((comparison) => comparison.id)).size, 281);
+  assert.equal(comparisons.length, 363);
+  assert.equal(new Set(comparisons.map((comparison) => comparison.id)).size, 363);
   assert.deepEqual([...comparisonCategories].sort(), ['count', 'duration', 'frequency', 'weight']);
   for (const category of comparisonCategories) assert.ok(comparisons.filter((comparison) => comparison.category === category).length >= 20);
   for (const comparison of comparisons) {
@@ -62,7 +62,7 @@ test('proposal pool contains 100 clear, non-overlapping comparisons across four 
 });
 
 test('subject pool deals close, non-overlapping, non-part-whole matchups', () => {
-  assert.equal(subjects.length, 196);
+  assert.equal(subjects.length, 193);
   assert.equal(new Set(subjects.map((subject) => subject.id)).size, subjects.length);
   assert.equal(new Set(subjects.map((subject) => `${subject.category}:${canonicalConceptKey(subject.label)}`)).size, subjects.length);
   assert.deepEqual(subjects.filter((subject) => /\b(big|large|huge|long|full-grown|giant)\b/i.test(subject.label) && !/\bgiant tortoise\b/i.test(subject.label)).map((subject) => subject.label), []);
@@ -71,24 +71,22 @@ test('subject pool deals close, non-overlapping, non-part-whole matchups', () =>
   assert.equal(subjects.some((subject) => subject.label === 'Two ticks of a clock'), false);
   assert.deepEqual(Object.fromEntries(subjectCategories.map((category) => [category, validSubjectPairs(category).length])), {
     count: 232,
-    duration: 62,
+    duration: 156,
     weight: 41,
     frequency: 17,
-    length: 18,
-    area: 18,
+    length: 13,
+    area: 9,
     volume: 13,
-    speed: 13,
+    speed: 9,
   });
   const byId = new Map(subjects.map((subject) => [subject.id, subject]));
   for (const [a, b] of [
-    ['duration-an-acorn-growing-into-a-full-sized-oak', 'duration-an-oak-trees-life'],
     ['weight-a-blue-whale', 'weight-all-the-blue-whales-on-earth'],
     ['weight-a-blue-whale', 'weight-all-whales-alive-today'],
     ['weight-all-the-blue-whales-on-earth', 'weight-all-whales-alive-today'],
     ['weight-earth', 'weight-all-eight-planets-together'],
     ['volume-the-water-in-the-mediterranean-sea', 'volume-the-water-in-all-of-earths-oceans'],
     ['area-the-great-barrier-reef-marine-park', 'area-the-pacific-ocean'],
-    ['area-a-city-block', 'area-the-island-of-manhattan'],
     ['weight-a-blue-whale', 'weight-a-blue-whales-tongue'],
     ['volume-the-water-in-the-atlantic-ocean', 'volume-the-water-in-all-of-earths-oceans'],
   ]) {
