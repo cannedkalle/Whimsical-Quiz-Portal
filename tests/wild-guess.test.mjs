@@ -41,8 +41,8 @@ const { database } = await import('../lib/wild-guess/database.mjs');
 execFileSync(process.execPath, ['scripts/setup-wild-guess.mjs'], { env: process.env });
 
 test('proposal pool contains 100 clear, non-overlapping comparisons across four categories', () => {
-  assert.equal(comparisons.length, 100);
-  assert.equal(new Set(comparisons.map((comparison) => comparison.id)).size, 100);
+  assert.equal(comparisons.length, 281);
+  assert.equal(new Set(comparisons.map((comparison) => comparison.id)).size, 281);
   assert.deepEqual([...comparisonCategories].sort(), ['count', 'duration', 'frequency', 'weight']);
   for (const category of comparisonCategories) assert.ok(comparisons.filter((comparison) => comparison.category === category).length >= 20);
   for (const comparison of comparisons) {
@@ -62,7 +62,7 @@ test('proposal pool contains 100 clear, non-overlapping comparisons across four 
 });
 
 test('subject pool deals close, non-overlapping, non-part-whole matchups', () => {
-  assert.equal(subjects.length, 163);
+  assert.equal(subjects.length, 196);
   assert.equal(new Set(subjects.map((subject) => subject.id)).size, subjects.length);
   assert.equal(new Set(subjects.map((subject) => `${subject.category}:${canonicalConceptKey(subject.label)}`)).size, subjects.length);
   assert.deepEqual(subjects.filter((subject) => /\b(big|large|huge|long|full-grown|giant)\b/i.test(subject.label) && !/\bgiant tortoise\b/i.test(subject.label)).map((subject) => subject.label), []);
@@ -70,19 +70,17 @@ test('subject pool deals close, non-overlapping, non-part-whole matchups', () =>
   assert.equal(subjects.some((subject) => subject.label === 'Two meals eaten by one person'), false);
   assert.equal(subjects.some((subject) => subject.label === 'Two ticks of a clock'), false);
   assert.deepEqual(Object.fromEntries(subjectCategories.map((category) => [category, validSubjectPairs(category).length])), {
-    count: 46,
-    duration: 67,
-    weight: 34,
-    frequency: 50,
-    length: 33,
-    area: 25,
+    count: 232,
+    duration: 62,
+    weight: 41,
+    frequency: 17,
+    length: 18,
+    area: 18,
     volume: 13,
-    speed: 24,
+    speed: 13,
   });
   const byId = new Map(subjects.map((subject) => [subject.id, subject]));
   for (const [a, b] of [
-    ['count-ants-alive-on-earth', 'count-insects-alive-on-earth'],
-    ['count-stars-your-eyes-can-see-in-a-dark-sky', 'count-stars-in-the-observable-universe'],
     ['duration-an-acorn-growing-into-a-full-sized-oak', 'duration-an-oak-trees-life'],
     ['weight-a-blue-whale', 'weight-all-the-blue-whales-on-earth'],
     ['weight-a-blue-whale', 'weight-all-whales-alive-today'],
