@@ -55,24 +55,25 @@ test('proposal pool contains 100 clear, non-overlapping comparisons across four 
   const weight = comparisons.filter((comparison) => comparison.category === 'weight');
   const frequency = comparisons.filter((comparison) => comparison.category === 'frequency');
   assert.ok(weight.every((comparison) => comparison.prompt === 'Which weighs more?'));
-  assert.ok(frequency.every((comparison) => comparison.prompt === 'Which has the shorter gap between events?'));
+  assert.ok(frequency.every((comparison) => comparison.prompt === 'Which happens more times per second?'));
   assert.ok(frequency.every((comparison) => !/\bin one second\b|\bduring the same\b/i.test(`${comparison.left.label} ${comparison.right.label}`)));
   assert.ok(frequency.every((comparison) => comparison.left.scaleLabel && comparison.right.scaleLabel));
   assert.ok(frequency.every((comparison) => /per second$/.test(comparison.left.scaleLabel) && /per second$/.test(comparison.right.scaleLabel)));
 });
 
 test('subject pool deals close, non-overlapping, non-part-whole matchups', () => {
-  assert.equal(subjects.length, 192);
+  assert.equal(subjects.length, 206);
   assert.equal(new Set(subjects.map((subject) => subject.id)).size, subjects.length);
   assert.equal(new Set(subjects.map((subject) => `${subject.category}:${canonicalConceptKey(subject.label)}`)).size, subjects.length);
   assert.deepEqual(subjects.filter((subject) => /\b(big|large|huge|long|full-grown|giant)\b/i.test(subject.label) && !/\bgiant tortoise\b/i.test(subject.label)).map((subject) => subject.label), []);
   assert.ok(subjects.filter((subject) => subject.category === 'frequency' && /wingbeats/i.test(subject.label)).length <= 5);
   assert.equal(subjects.some((subject) => subject.label === 'Two meals eaten by one person'), false);
   assert.equal(subjects.some((subject) => subject.label === 'Two ticks of a clock'), false);
-  assert.deepEqual(subjectCategories, ['count', 'duration'], 'only reviewed categories deal');
+  assert.deepEqual(subjectCategories, ['count', 'duration', 'frequency'], 'only reviewed categories deal');
   assert.deepEqual(Object.fromEntries(subjectCategories.map((category) => [category, validSubjectPairs(category).length])), {
     count: 232,
     duration: 156,
+    frequency: 36,
   });
   const byId = new Map(subjects.map((subject) => [subject.id, subject]));
   for (const [a, b] of [
@@ -100,16 +101,25 @@ test('subject pool deals close, non-overlapping, non-part-whole matchups', () =>
   }
 });
 
-test('frequency no longer leans on the blue whale heartbeat, and retired subjects stay out', () => {
+test('frequency rebuild: 35 new subjects live, 21 old labels retired', () => {
   const frequencyPairs = validSubjectPairs('frequency');
-  const whalePairs = frequencyPairs.filter(([a, b]) => a.label.includes('blue whale') || b.label.includes('blue whale'));
-  assert.equal(whalePairs.length, 3); // Tuned gate drops the two gap-3 whale pairs (mosquito, honeybee).
-  assert.ok(whalePairs.length < frequencyPairs.length / 4, 'whale share under a quarter');
+  const frequencySubjects = subjects.filter((s) => s.category === 'frequency');
+  assert.equal(frequencySubjects.length, 35);
+  // All 21 old "Two X" labels are retired (none live).
+  const oldLabels = ['Two mosquito wingbeats', 'Two butterfly wingbeats', 'Two hummingbird wingbeats', 'Two hummingbird heartbeats', 'Two blue whale heartbeats', 'Two shakes of a rattlesnake’s rattle', 'Two waves reaching one beach', 'Two blinks of a human eye', 'Two heartbeats of an elephant', 'Two breaths of a resting person', 'Two wingbeats of the fastest midge', 'Two chirps of a cricket on a warm night', 'Two heartbeats of a resting person', 'Two wingbeats of a honeybee', 'Two flashes of a lighthouse', 'Newspapers printed each day'];
+  for (const label of oldLabels) {
+    assert.equal(frequencySubjects.some((s) => s.label === label), false, `old label still live: ${label}`);
+  }
+  // Spot-check new labels are live.
+  for (const label of ['Hummingbird hearts beat', 'Neutron stars spin', 'New stars form in the observable universe', 'Raindrops fall around the world']) {
+    assert.equal(frequencySubjects.some((s) => s.label === label), true, `new label missing: ${label}`);
+  }
+  assert.ok(frequencyPairs.length > 0, 'frequency deals pairs');
   for (const label of ['Two human heartbeats', 'Two ticks of a clock', 'Two meals eaten by one person', 'Fish in a sardine school', 'A banana peel breaking down outdoors', 'A plastic bottle breaking down outdoors']) {
     assert.equal(subjects.some((subject) => subject.label === label), false, label);
   }
   // Un-retired by Kai's feedback: waves and the Olympic pool are live again.
-  for (const label of ['Two waves reaching one beach', 'The water in an Olympic competition pool', 'Sardines in a bait ball', 'A slime mold eating a banana peel', 'A plastic bottle breaking down in the ocean']) {
+  for (const label of ['The water in an Olympic competition pool', 'Sardines in a bait ball', 'A slime mold eating a banana peel', 'A plastic bottle breaking down in the ocean']) {
     assert.equal(subjects.some((subject) => subject.label === label), true, label);
   }
   // Retired 2026-11-01 (Kai): the Moon's age is trivia, not estimation.

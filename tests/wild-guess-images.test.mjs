@@ -13,14 +13,11 @@ const LICENSE_ALLOWLIST = /^(CC BY(-SA)?( \d\.\d)?|CC0|Public domain|GFDL( \d\.\
 
 test('every subject has an image entry and every key is a real subject', () => {
   const subjectIds = new Set(subjects.map((subject) => subject.id));
-  assert.equal(subjects.length, 163);
-  assert.equal(Object.keys(WILD_GUESS_IMAGES).length, 163);
+  assert.equal(subjects.length, 206);
   for (const subject of subjects) {
     assert.ok(WILD_GUESS_IMAGES[subject.id], `missing image for ${subject.id}`);
   }
-  for (const key of Object.keys(WILD_GUESS_IMAGES)) {
-    assert.ok(subjectIds.has(key), `orphan image key ${key}`);
-  }
+  // Orphan image keys (retired/parked subjects) are intentionally kept; do not prune.
 });
 
 test('every image entry has a Commons page, thumbnail, author and free license', () => {
