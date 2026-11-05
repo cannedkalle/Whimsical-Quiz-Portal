@@ -25,4 +25,8 @@ jobs:
       - run: npm run test:marble-battles
       - run: npm run test:animal-outsider
       - run: npm run test:tango-cards
+      - run: npm run test:wild-guess-images
+      - run: npm run test:name-quest-images
+      - run: npm run test:animal-outsider-images
+      - run: npm run test:preload-images
       - run: npm run build
