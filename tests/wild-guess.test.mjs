@@ -76,7 +76,7 @@ test('frequency rebuild: 35 new subjects live, 21 old labels retired', () => {
     assert.equal(frequencySubjects.some((s) => s.label === label), false, `old label still live: ${label}`);
   }
   // Spot-check new labels are live.
-  for (const label of ['Hummingbird hearts beat', 'Neutron stars spin', 'New stars form in the observable universe', 'Raindrops fall around the world']) {
+  for (const label of ['Hummingbird hearts beat', 'Fastest neutron star spins', 'New stars form in the observable universe', 'Raindrops fall around the world']) {
     assert.equal(frequencySubjects.some((s) => s.label === label), true, `new label missing: ${label}`);
   }
   assert.ok(frequencyPairs.length > 0, 'frequency deals pairs');
