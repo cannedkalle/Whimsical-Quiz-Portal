@@ -4,7 +4,7 @@ Kids quiz games at https://cannedkallequiz.vercel.app/
 
 ## Games
 
-- **Balls in the Ballpark** (`/wild-guess`) — estimation game: which is more, bigger, longer? Categories: count, duration, frequency, length.
+- **Balls in the Ballpark** (`/wild-guess`) — estimation game: which is more, bigger, longer? Categories: count, duration, frequency, length (212 subjects; images from Wikimedia Commons only).
 - **Before the Bulb** — invention history quiz
 - **Tango Cards** — collectible card gallery
 - **Marble Battles** — simulation game
@@ -25,6 +25,7 @@ npm run dev
 ```sh
 npm run wild-guess:test
 npm run test:wild-guess-images
+npm run test:name-quest
 npm run build
 ```
 
