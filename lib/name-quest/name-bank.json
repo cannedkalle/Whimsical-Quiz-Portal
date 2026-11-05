@@ -27368,23 +27368,6 @@
   "wordForm": "single"
  },
  {
-  "name": "ClamChowder",
-  "category": "Dish",
-  "subcategory": "Dish",
-  "acceptedAnswers": [
-   "dish",
-   "prepared food",
-   "food"
-  ],
-  "difficulty": 3,
-  "ambiguity": "low",
-  "commonName": "none",
-  "pronunciation": "Clam Chowder",
-  "explanation": "Clam chowder is a creamy soup.",
-  "id": "clamchowder",
-  "wordForm": "single"
- },
- {
   "name": "Pierna",
   "category": "Dish",
   "subcategory": "Dish",
