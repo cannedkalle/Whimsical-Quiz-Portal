@@ -13,7 +13,7 @@ const LICENSE_ALLOWLIST = /^(CC BY(-SA)?( \d\.\d)?|CC0|Public domain|GFDL( \d\.\
 
 test('every subject has an image entry and every key is a real subject', () => {
   const subjectIds = new Set(subjects.map((subject) => subject.id));
-  assert.equal(subjects.length, 206);
+  assert.equal(subjects.length, 212);
   for (const subject of subjects) {
     assert.ok(WILD_GUESS_IMAGES[subject.id], `missing image for ${subject.id}`);
   }
