@@ -38,6 +38,16 @@ export default function Game() {
   const [streak, setStreak] = useState(0);
   const [over, setOver] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  /* Category filter: 'mixed' deals from all categories (the default),
+   * otherwise only that category. */
+  const [category, setCategory] = useState('mixed');
+  const CATEGORIES = [
+    { id: 'mixed', label: 'Mixed' },
+    { id: 'count', label: 'Count' },
+    { id: 'duration', label: 'Duration' },
+    { id: 'frequency', label: 'Frequency' },
+    { id: 'length', label: 'Length' },
+  ];
   const heading = useRef(null);
   const historyRef = useRef([]);
   /* Deal through the generator, avoiding the last 12 matchups so the same
@@ -45,16 +55,17 @@ export default function Game() {
    * page session: Play again and mode switches never clear it, so a fresh
    * game never re-deals a recent pairing. Every deal stays an independent
    * random draw — there is no deck, no fixed order, no sequence to learn. */
-  const deal = () => {
-    const next = generateComparison(undefined, { pairIds: historyRef.current });
+  const deal = (categoryOverride) => {
+    const cat = categoryOverride ?? category;
+    const next = generateComparison(cat === 'mixed' ? undefined : cat, { pairIds: historyRef.current });
     if (next) {
       historyRef.current = [...historyRef.current, next.id].slice(-12);
     }
     return next;
   };
 
-  const startFresh = () => {
-    const next = deal();
+  const startFresh = (categoryOverride) => {
+    const next = deal(categoryOverride);
     if (!next) {
       setError('No matchups are available yet.');
       return;
@@ -80,6 +91,13 @@ export default function Game() {
     if (nextMode === playMode) return;
     setPlayMode(nextMode);
     startFresh();
+  };
+
+  /* Switching category resets the score, same as switching play mode. */
+  const switchCategory = (nextCategory) => {
+    if (nextCategory === category) return;
+    setCategory(nextCategory);
+    startFresh(nextCategory);
   };
 
   useEffect(() => {
@@ -156,16 +174,16 @@ export default function Game() {
     const label = side.label;
     const p = side.plural;
     if (reveal.prompt.includes('shorter gap')) return `${label} ${p ? 'happen' : 'happens'} more often.`;
-    if (reveal.prompt.includes('takes longer')) return `${label} ${p ? 'take' : 'takes'} longer.`;
+    if (reveal.prompt.includes('takes more time')) return `${label} ${p ? 'take' : 'takes'} more time.`;
     if (reveal.prompt.includes('weighs')) return `${label} ${p ? 'weigh' : 'weighs'} more.`;
     if (reveal.prompt.includes('covers more')) return `${label} ${p ? 'cover' : 'covers'} more area.`;
     if (reveal.prompt.includes('takes up more')) return `${label} ${p ? 'take' : 'takes'} up more space.`;
     if (reveal.prompt.includes('moves or grows faster')) return `${label} ${p ? 'are' : 'is'} faster.`;
-    if (reveal.prompt.includes('is longer')) return `${label} ${p ? 'are' : 'is'} longer.`;
+    if (reveal.prompt.includes('greater length')) return `${label} ${p ? 'have' : 'has'} greater length.`;
     return `${label} ${p ? 'have' : 'has'} more.`;
   })() : '';
 
-  return <><PortalNav/><main className="wg"><GameBar title="Balls in the Ballpark" onStartOver={startFresh} settingsSummary={(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label}><div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div></GameBar><StatusLine round={reveal ? played : played + 1} total={playMode === 'ten' ? 10 : null} correct={correct} played={played} streak={streak} lives={playMode === 'lives' ? lives : null} /><div className="wg-layout"><section className="wg-board">
+  return <><PortalNav/><main className="wg"><GameBar title="Balls in the Ballpark" onStartOver={startFresh} settingsSummary={`${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} · ${(CATEGORIES.find((cat) => cat.id === category) || {}).label}`}><div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div><div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div></GameBar><StatusLine round={reveal ? played : played + 1} total={playMode === 'ten' ? 10 : null} correct={correct} played={played} streak={streak} lives={playMode === 'lives' ? lives : null} /><div className="wg-layout"><section className="wg-board">
     {error && <div className="wg-error" role="alert">{error} <button className="pf-btn" onClick={startFresh}>Start over</button></div>}
     {!comparison ? <div className="wg-loading">Finding a curious matchup…</div> : <>
       {over && showResults ? <div className="wg-finish" role="status">
@@ -176,7 +194,7 @@ export default function Game() {
       </div> : reveal ? <div className="wg-comparison-reveal" role="status">
         <p className="wg-result-kicker">{reveal.correct ? 'You called it!' : 'Plot twist!'}</p>
         <h2 ref={heading} tabIndex={-1}>{winnerCopy}</h2>
-        <div className="wg-reveal-sides">{reveal.sides.map((option, index) => <article className={index === reveal.correctChoice ? 'is-winner' : ''} key={option.label}><ChoicePhoto option={option} className="wg-reveal-photo" /><div className="wg-reveal-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><h3>{option.label}</h3><p className="wg-scale-answer">{option.scaleLead} <strong>{option.scale}</strong></p><p className="wg-reveal-detail">{option.detail}</p>{option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{index === reveal.correctChoice && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('longer') ? 'Longer ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div></article>)}</div>
+        <div className="wg-reveal-sides">{reveal.sides.map((option, index) => <article className={index === reveal.correctChoice ? 'is-winner' : ''} key={option.label}><ChoicePhoto option={option} className="wg-reveal-photo" /><div className="wg-reveal-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><h3>{option.label}</h3><p className="wg-scale-answer">{option.scaleLead} <strong>{option.scale}</strong></p><p className="wg-reveal-detail">{option.detail}</p>{option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{index === reveal.correctChoice && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div></article>)}</div>
         <button className="pf-primary" onClick={over ? () => setShowResults(true) : next}>{over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}</button>
       </div> : <>
         <h2 className="wg-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h2>
