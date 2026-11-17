@@ -79,7 +79,9 @@ game's winner/loser treatment at reveal).
 
 ### Answer
 
-Informational, not interactive: no hover. Two cases:
+Informational, not interactive: no hover. Answers render inside the
+shared result dialog (`ResultDialog`); the boxes below are the
+dialog's answer slots, and the reuse rules still govern them. Two cases:
 
 - The answer is one of the options (Balls, Bulb, Outsider): the
   reveal reuses the option's box — same type, same image, same size
