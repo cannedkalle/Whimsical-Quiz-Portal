@@ -16,8 +16,8 @@ const LICENSE_ALLOWLIST = /^(CC BY(-SA)?( \d\.\d)?|CC0|Public domain|GFDL( \d\.\
 
 test('every bank entry has an image key and every key is a real entry', () => {
   const ids = new Set(bank.map((entry) => entry.id));
-  assert.equal(bank.length, 2244);
-  assert.equal(Object.keys(NAME_QUEST_IMAGES).length, 2244);
+  assert.equal(bank.length, 2243);
+  assert.equal(Object.keys(NAME_QUEST_IMAGES).length, 2243);
   for (const entry of bank) {
     assert.ok(Object.prototype.hasOwnProperty.call(NAME_QUEST_IMAGES, entry.id), `missing image key for ${entry.id}`);
   }
