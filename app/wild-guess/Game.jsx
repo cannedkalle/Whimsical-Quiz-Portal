@@ -8,6 +8,7 @@ import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import { WILD_GUESS_IMAGES } from '../../lib/wild-guess/images.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
 import { ArrowRightIcon } from "../components/Icons";
+import ResultDialog from '../components/ResultDialog';
 
 /* Balls in the Ballpark, played entirely in the browser: matchups are dealt
  * from the catalog that lives in the repo, and progress is kept in the
@@ -111,7 +112,10 @@ export default function Game() {
       startFresh();
     }
   }, []);
-  useEffect(() => { if (comparison) heading.current?.focus(); }, [comparison, reveal]);
+  /* Focus the question when a round is dealt. While the result dialog
+   * is open it focuses its own title, so the question is not focused
+   * then; Next clears the reveal and focus returns here. */
+  useEffect(() => { if (comparison && !reveal) heading.current?.focus(); }, [comparison, reveal]);
 
   const choose = (choice) => {
     if (!comparison || reveal) return;
@@ -191,15 +195,18 @@ export default function Game() {
         <h2 ref={heading} tabIndex={-1}>{playMode === 'ten' ? 'Here is how you did.' : 'Good run. Here is how you did.'}</h2>
         <p className="wg-final-score">{correct}<span> / {played} right</span></p>
         <button className="pf-primary" onClick={startFresh}>Play again <ArrowRightIcon /></button>
-      </div> : reveal ? <div className="wg-comparison-reveal" role="status">
-        <p className="wg-result-kicker">{reveal.correct ? 'You called it!' : 'Plot twist!'}</p>
-        <h2 ref={heading} tabIndex={-1}>{winnerCopy}</h2>
-        <div className="wg-reveal-sides">{reveal.sides.map((option, index) => <article className={index === reveal.correctChoice ? 'is-winner' : ''} key={option.label}><ChoicePhoto option={option} className="wg-reveal-photo" /><div className="wg-reveal-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><h3>{option.label}</h3><p className="wg-scale-answer">{option.scaleLead} <strong>{option.scale}</strong></p><p className="wg-reveal-detail">{option.detail}</p>{option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{index === reveal.correctChoice && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div></article>)}</div>
-        <button className="pf-primary" onClick={over ? () => setShowResults(true) : next}>{over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}</button>
       </div> : <>
         <h2 className="wg-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h2>
-        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} onClick={() => choose(index)}><ChoicePhoto option={option} /><span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong><span className="wg-pick-label">Pick this one</span></span></button>)}</div>
+        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} /><span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong><span className="wg-pick-label">Pick this one</span></span></button>)}</div>
       </>}
     </>}
-  </section></div></main></>;
+  </section></div><ResultDialog
+    open={reveal !== null && !showResults}
+    verdict={reveal?.correct ? 'correct' : 'wrong'}
+    kicker={reveal?.correct ? 'You called it!' : 'Plot twist!'}
+    title={winnerCopy}
+    answer={reveal ? <div className="wg-reveal-sides">{reveal.sides.map((option, index) => <article className={index === reveal.correctChoice ? 'is-winner' : ''} key={option.label}><ChoicePhoto option={option} className="wg-reveal-photo" /><div className="wg-reveal-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><h3>{option.label}</h3><p className="wg-scale-answer">{option.scaleLead} <strong>{option.scale}</strong></p><p className="wg-reveal-detail">{option.detail}</p>{option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{index === reveal.correctChoice && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div></article>)}</div> : null}
+    nextLabel={over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}
+    onNext={over ? () => setShowResults(true) : next}
+  /></main></>;
 }

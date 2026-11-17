@@ -13,9 +13,10 @@ The sets below govern the five quizzes.
 ## Mobile UI standard
 
 The shell (`app/components/QuizShell.jsx`) is the single controller for
-game chrome on phones. Games own their question content, choice layout,
-and reveal panels — everything else below is uniform, with no per-game
-exceptions.
+game chrome on phones. Games own their question content and choice
+layout; the reveal is the shared result dialog
+(`app/components/ResultDialog.jsx`) — everything else below is
+uniform, with no per-game exceptions.
 
 ### Frame, top to bottom
 
@@ -57,9 +58,17 @@ art below); the frame does not grow.
 5. **Choices.** Game-owned layout, under the fit rule. Choice controls
    are at least 44px tall; the game bar's 36px controls are the one
    deliberate exception, bought for the one-row bar.
-6. **Reveal.** Below the choices after answering; it scrolls, and the
-   fit rule does not apply to it. Its Next button reads "Next round";
-   when the game is over it reads "See results" instead.
+6. **Reveal.** A dialog (`ResultDialog`), opened on answering, over
+   the question and choices, which stay rendered behind it. It
+   scrolls, and the fit rule does not apply to it. Its shape is the
+   same in every game: verdict band (the game's own kicker, kept
+   verbatim), right answer as the title, revealed image if any, one
+   brief explanation, and a sticky Next footer. A "Dive deeper"
+   button appears only where the game used to show a long
+   explanation (Bulb, Outsider); games with no long content show no
+   button. The dialog closes only via its Next button. Its Next
+   button reads "Next round"; when the game is over it reads "See
+   results" instead.
 7. **Results screen.** Kicker "10 rounds done!" (10-question mode) or
    "Out of lives!" (lives mode), score summary, Play again (primary).
 
