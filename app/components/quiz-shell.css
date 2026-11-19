@@ -64,6 +64,19 @@
 .rd-footer{flex:none;padding:16px 20px 20px;border-top:1px solid var(--pf-line)}
 .rd-next{width:100%}
 
+/* Staged entrance (redesign 2026-11-18): the dialog's content arrives in
+ * beats — verdict band, then title, then each reveal row. The verdict
+ * band is instant (no animation); the title and rows rise in after it.
+ * The animations restart on every open: they are keyed to [open], which
+ * only matches while the dialog is shown. */
+@keyframes rd-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.rd-dialog[open] .rd-title{animation:rd-rise .3s ease both}
+.rd-dialog[open] .wg-reveal-rows .wg-reveal-row:nth-child(1){animation:rd-rise .3s ease .09s both}
+.rd-dialog[open] .wg-reveal-rows .wg-reveal-row:nth-child(2){animation:rd-rise .3s ease .18s both}
+@media (prefers-reduced-motion: reduce){
+  .rd-dialog[open] .rd-title,.rd-dialog[open] .wg-reveal-rows .wg-reveal-row{animation:none}
+}
+
 @media(max-width:600px){
   .rd-verdict{padding:12px 16px}
   .rd-body{padding:16px}

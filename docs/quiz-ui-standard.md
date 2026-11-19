@@ -58,17 +58,36 @@ art below); the frame does not grow.
 5. **Choices.** Game-owned layout, under the fit rule. Choice controls
    are at least 44px tall; the game bar's 36px controls are the one
    deliberate exception, bought for the one-row bar.
-6. **Reveal.** A dialog (`ResultDialog`), opened on answering, over
-   the question and choices, which stay rendered behind it. It
-   scrolls, and the fit rule does not apply to it. Its shape is the
-   same in every game: verdict band (the game's own kicker, kept
-   verbatim), right answer as the title, revealed image if any, one
-   brief explanation, and a sticky Next footer. A "Dive deeper"
-   button appears only where the game used to show a long
-   explanation (Bulb, Outsider); games with no long content show no
-   button. The dialog closes only via its Next button. Its Next
-   button reads "Next round"; when the game is over it reads "See
-   results" instead.
+6. **Reveal.** Two beats. First the verdict lands on the board where
+   the player tapped: the picked choice marks itself right or wrong
+   in place (winner marked, the other side dims), and the score line
+   updates. A beat later a dialog (`ResultDialog`) opens over the
+   question and choices, which stay rendered behind it. It scrolls,
+   and the fit rule does not apply to it. The dialog carries only
+   the learning — right answer as the title, revealed image if any,
+   one brief explanation — and a game whose round has no learning
+   content opens no dialog at all. Trimmed by default (Kai 2026-11-19:
+   the dialog showed too much all at once, then ruled the dialog must
+   not repeat the board): in Balls the title is the player's pick in
+   its short form, and the rows are ordered around the pick — your
+   scale first, the other side second with its short label and scale,
+   winner marked — no photos, no cards, no full sentences. Each
+   subject carries a `short` (max 3 words, action kept; the board
+   keeps the full labels); the detail lines sit behind a
+   "Show details" button under the rows that reveals them on demand
+   ("Hide details" to collapse again), reset each round. The verdict
+   band stays in the dialog (Kai 2026-11-19: without it he could not
+   tell right from wrong — the dialog covers the board's verdict);
+   the band is one line, mark plus kicker, and nothing else in the
+   dialog repeats the board. Its shape is the same in every
+   game: verdict band where the game keeps one (the game's own
+   kicker, kept verbatim; Balls hides it, the verdict is already on
+   the board), content arriving in beats (title, then each reveal
+   piece), and a sticky Next footer. A "Dive deeper" button appears
+   only where the game used to show a long explanation (Bulb,
+   Outsider); games with no long content show no button. The dialog
+   closes only via its Next button. Its Next button reads "Next
+   round"; when the game is over it reads "See results" instead.
 7. **Results screen.** Kicker "10 rounds done!" (10-question mode) or
    "Out of lives!" (lives mode), score summary, Play again (primary).
 

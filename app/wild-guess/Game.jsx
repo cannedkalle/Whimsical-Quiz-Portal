@@ -39,6 +39,12 @@ export default function Game() {
   const [streak, setStreak] = useState(0);
   const [over, setOver] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  /* The dialog opens a beat after the verdict lands on the board
+   * (see the effect below), so `dialogOpen` is separate from `reveal`. */
+  const [dialogOpen, setDialogOpen] = useState(false);
+  /* The dialog shows the trimmed reveal (photo, label, scale) by default;
+   * the detail and note lines sit one tap away behind "Show details". */
+  const [showDetails, setShowDetails] = useState(false);
   /* Category filter: 'mixed' deals from all categories (the default),
    * otherwise only that category. */
   const [category, setCategory] = useState('mixed');
@@ -83,6 +89,8 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
+    setDialogOpen(false);
+    setShowDetails(false);
     saveProgress({ leftId: next.left.id, rightId: next.right.id, category: next.category, position: 0, played: 0, correct: 0 });
   };
 
@@ -116,6 +124,14 @@ export default function Game() {
    * is open it focuses its own title, so the question is not focused
    * then; Next clears the reveal and focus returns here. */
   useEffect(() => { if (comparison && !reveal) heading.current?.focus(); }, [comparison, reveal]);
+  /* Verdict first, on the board: the dialog opens 400ms after the
+   * choice marks itself, so the player sees the verdict where they
+   * tapped it before the dialog carries the learning. */
+  useEffect(() => {
+    if (!reveal || showResults) return undefined;
+    const timer = window.setTimeout(() => setDialogOpen(true), 400);
+    return () => window.clearTimeout(timer);
+  }, [reveal, showResults]);
 
   const choose = (choice) => {
     if (!comparison || reveal) return;
@@ -151,6 +167,8 @@ export default function Game() {
   };
 
   const next = () => {
+    setDialogOpen(false);
+    setShowDetails(false);
     if (queued) {
       setComparison(queued);
       setPosition(position + 1);
@@ -173,19 +191,7 @@ export default function Game() {
     saveProgress({ leftId: nextComparison.left.id, rightId: nextComparison.right.id, category: nextComparison.category, position: nextPosition, played, correct });
   };
 
-  const winnerCopy = reveal ? (() => {
-    const side = reveal.sides[reveal.correctChoice];
-    const label = side.label;
-    const p = side.plural;
-    if (reveal.prompt.includes('shorter gap')) return `${label} ${p ? 'happen' : 'happens'} more often.`;
-    if (reveal.prompt.includes('takes more time')) return `${label} ${p ? 'take' : 'takes'} more time.`;
-    if (reveal.prompt.includes('weighs')) return `${label} ${p ? 'weigh' : 'weighs'} more.`;
-    if (reveal.prompt.includes('covers more')) return `${label} ${p ? 'cover' : 'covers'} more area.`;
-    if (reveal.prompt.includes('takes up more')) return `${label} ${p ? 'take' : 'takes'} up more space.`;
-    if (reveal.prompt.includes('moves or grows faster')) return `${label} ${p ? 'are' : 'is'} faster.`;
-    if (reveal.prompt.includes('greater length')) return `${label} ${p ? 'have' : 'has'} greater length.`;
-    return `${label} ${p ? 'have' : 'has'} more.`;
-  })() : '';
+  const pickShort = reveal ? reveal.sides[reveal.choice].short : '';
 
   return <><PortalNav/><main className="wg"><GameBar title="Balls in the Ballpark" onStartOver={startFresh} settingsSummary={`${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} · ${(CATEGORIES.find((cat) => cat.id === category) || {}).label}`}><div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div><div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div></GameBar><StatusLine round={reveal ? played : played + 1} total={playMode === 'ten' ? 10 : null} correct={correct} played={played} streak={streak} lives={playMode === 'lives' ? lives : null} /><div className="wg-layout"><section className="wg-board">
     {error && <div className="wg-error" role="alert">{error} <button className="pf-btn" onClick={startFresh}>Start over</button></div>}
@@ -197,16 +203,16 @@ export default function Game() {
         <button className="pf-primary" onClick={startFresh}>Play again <ArrowRightIcon /></button>
       </div> : <>
         <h2 className="wg-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h2>
-        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} /><span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong><span className="wg-pick-label">Pick this one</span></span></button>)}</div>
+        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={reveal ? (index === reveal.correctChoice ? 'is-correct' : index === reveal.choice ? 'is-wrong' : 'is-dim') : ''} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="wg-verdict-mark" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="wg-verdict-mark" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong><span className="wg-pick-label">{reveal ? (index === reveal.choice ? (reveal.correct ? 'Your pick ✓' : 'Your pick ✗') : '') : 'Pick this one'}</span></span></button>)}</div>
       </>}
     </>}
   </section></div><ResultDialog
-    open={reveal !== null && !showResults}
+    open={dialogOpen}
     verdict={reveal?.correct ? 'correct' : 'wrong'}
     kicker={reveal?.correct ? 'You called it!' : 'Plot twist!'}
-    title={winnerCopy}
-    answer={reveal ? <div className="wg-reveal-sides">{reveal.sides.map((option, index) => <article className={index === reveal.correctChoice ? 'is-winner' : ''} key={option.label}><ChoicePhoto option={option} className="wg-reveal-photo" /><div className="wg-reveal-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><h3>{option.label}</h3><p className="wg-scale-answer">{option.scaleLead} <strong>{option.scale}</strong></p><p className="wg-reveal-detail">{option.detail}</p>{option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{index === reveal.correctChoice && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div></article>)}</div> : null}
+    title={pickShort}
+    answer={reveal ? <><div className="wg-reveal-rows">{[reveal.sides[reveal.choice], reveal.sides[1 - reveal.choice]].map((option, order) => <div className={option === reveal.sides[reveal.correctChoice] ? 'wg-reveal-row is-winner' : 'wg-reveal-row'} key={option.label}><p className="wg-scale-answer">{order === 1 ? <><span className="wg-row-short">{option.short}</span>{' \u2014 '}</> : null}<strong>{option.scale}</strong></p>{showDetails ? <p className="wg-reveal-detail">{option.detail}</p> : null}{showDetails && option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{option === reveal.sides[reveal.correctChoice] && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div>)}</div><button type="button" className="wg-details-toggle" onClick={() => setShowDetails((v) => !v)}>{showDetails ? 'Hide details' : 'Show details'}</button></> : null}
     nextLabel={over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}
-    onNext={over ? () => setShowResults(true) : next}
+    onNext={over ? () => { setDialogOpen(false); setShowResults(true); } : () => { setDialogOpen(false); next(); }}
   /></main></>;
 }

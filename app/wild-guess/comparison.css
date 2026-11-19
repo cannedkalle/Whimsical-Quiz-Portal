@@ -47,3 +47,34 @@
 @media (max-width: 560px) {
   .wg-choice-grid .wg-choice-photo, .wg-reveal-sides .wg-reveal-photo { aspect-ratio: auto; height: 150px; }
 }
+
+/* Verdict in place (redesign 2026-11-18): the tapped choice marks itself
+ * the instant it is picked — winner green, wrong pick red, the other side
+ * dims — before the dialog opens a beat later. Disabled cards keep full
+ * opacity so the verdict colours read; only the loser dims. */
+.wg-choice-grid button{position:relative}
+.wg .wg-choice-grid button:disabled{opacity:1}
+.wg-choice-grid button.is-correct{border-color:var(--pf-green);background:var(--pf-leaf-soft)}
+.wg-choice-grid button.is-wrong{border-color:var(--pf-error);background:var(--pf-peach-soft)}
+.wg .wg-choice-grid button.is-dim{opacity:.55}
+.wg-verdict-mark{position:absolute;top:12px;right:12px;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--pf-surface);font-size:18px;font-weight:800}
+.wg-choice-grid button.is-correct .wg-verdict-mark{color:var(--pf-green)}
+.wg-choice-grid button.is-wrong .wg-verdict-mark{color:var(--pf-error)}
+.wg-choice-grid button.is-wrong .wg-pick-label{color:var(--pf-error)}
+
+/* "Show details" toggle in the result dialog: a quiet text button under
+ * the reveal sides. The dialog shows the trimmed reveal by default. */
+.wg-details-toggle{display:block;margin:14px auto 0;padding:6px 10px;border:0;background:none;color:var(--pf-ink);font:inherit;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.wg-details-toggle:focus-visible{outline:2px solid var(--pf-ink);outline-offset:2px;border-radius:6px}
+
+/* v4 (Kai 2026-11-19): the dialog repeats nothing from the board — no
+ * photos, no cards. Only the new learning, as plain text rows: label,
+ * scale answer, winner mark; details stay behind "Show details". */
+.wg-reveal-rows{display:flex;flex-direction:column}
+.wg-reveal-row{padding:14px 2px}
+.wg-reveal-row + .wg-reveal-row{border-top:1px solid var(--pf-line)}
+.wg-reveal-rows .wg-scale-answer{margin:0}
+.wg-reveal-row .wg-winner-mark{margin-top:8px}
+.wg-reveal-rows .wg-reveal-detail{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:8px 0 0}
+.wg-reveal-rows .wg-reveal-note{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:8px 0 0}
+.wg-row-short{font-weight:700;color:var(--pf-ink)}
