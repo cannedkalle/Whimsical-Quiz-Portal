@@ -16,8 +16,9 @@ The shell (`app/components/QuizShell.jsx`) is the single controller for
 game chrome on phones. Games own their question content and choice
 layout; the reveal is the shared inline module
 (`app/components/ResultReveal.jsx`). Balls in the Ballpark pilots the
-minimal frame (see the note under the frame list); the other four
-games keep the frame below until their rollout.
+minimal frame and Before the Bulb follows it (see the note under the
+frame list); the other three games keep the frame below until their
+rollout.
 
 ### Frame, top to bottom
 
@@ -67,8 +68,23 @@ art below); the frame does not grow.
    question; the question is centred at 24px; the board card goes
    (no border, no padding), so the question and cards sit straight
    on the paper. Cards drop the "Pick this one" line, labels go
-   20px to 18px, photos stay 150px. The other four games keep rows
-   1–4 until their rollout.
+   20px to 18px, photos stay 150px.
+
+   **Before the Bulb follows (Kai 2026-11-19):** the same one top
+   row (✕, "Curated · Endless ▾" with Pool and Play pills plus Start
+   over inside, ✓ score); the round label uses Bulb's own word
+   ("DISCOVERY N" in Curated, "WILD CARD N" in Wild); the question
+   is centred at 24px; the "Tap to choose" status only renders
+   after answering, carrying the verdict; names go 25px to 22px;
+   photos stay 150px, "What's this?" stays, the OR badge is gone
+   (2026-11-19, Kai approved after the design recommendation:
+   no researched app labels the junction — Duolingo, Kahoot,
+   Quizlet all present bare options and the tap is the choice;
+   removing its phone row bought ~60px of air), the
+   "No timer. Just a little curiosity." line goes. A photo round
+   was ~1350px of parts in an 844px viewport; after the cut it
+   fits exactly at 844px, no scroll. The other three games keep
+   rows 1–4 until their rollout.
 5. **Choices.** Game-owned layout, under the fit rule. Choice controls
    are at least 44px tall; the game bar's 36px controls are the one
    deliberate exception, bought for the one-row bar.
@@ -108,6 +124,14 @@ art below); the frame does not grow.
    Outsider); games with no long content show no button. The reveal
    advances only via its Next button. Its Next button reads "Next
    round"; when the game is over it reads "See results" instead.
+   Bulb keeps "Next discovery" / "See results" and is the first
+   Dive deeper adoption: its answer slot is "{earlier} came
+   first!" plus the two date blocks (dates, names, dateBasis, in
+   choice order), its brief is the fact box, and its details are
+   the "Dates & sources" content (source note, per-object
+   ambiguity notes, source links, fun-fact source). Its kickers
+   ("YOU'VE GOT A BRIGHT MIND!" / "A LITTLE SURPRISE!") and the ✦
+   spark are gone with the hero, same as Balls' kickers.
 7. **Results screen.** Kicker "10 rounds done!" (10-question mode) or
    "Out of lives!" (lives mode), score summary, Play again (primary).
 

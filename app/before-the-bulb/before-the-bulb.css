@@ -23,41 +23,31 @@
  * Bulb text stays centered: its cards do not transform at reveal, so
  * there is no center-to-left jump to avoid (unlike Balls). */
 
-.before-the-bulb .shell { max-width: 1176px; margin: auto; padding: 24px 32px; }
-.before-the-bulb .game { max-width: 880px; margin: 32px auto 0; }
+.before-the-bulb .shell { max-width: 1176px; margin: auto; padding: 12px 32px 24px; transition: background-color .2s ease-out; }
+/* Kahoot wash (2026-11-19): the page floods with the verdict colour the
+ * instant a choice marks itself, same soft tints as Balls. */
+.before-the-bulb .shell.is-correct { background: var(--pf-leaf-soft); }
+.before-the-bulb .shell.is-wrong { background: var(--pf-peach-soft); }
+.before-the-bulb .game { max-width: 880px; margin: 12px auto 0; }
 
-/* Question: the only h1 this sheet styles. Left-aligned, per the standard. */
+/* Question: the only h1 this sheet styles. Centred, per the minimal
+ * frame (Kombai, 2026-11-19): the question is the next thing on
+ * screen after the one-row top bar. */
 .before-the-bulb .question {
-  margin: 16px 0;
-  font-size: clamp(28px, 5vw, 40px);
+  margin: 8px 0 16px;
+  font-size: clamp(24px, 3vw, 32px);
   font-weight: 800;
-  letter-spacing: -1.2px;
+  letter-spacing: -.5px;
   line-height: 1.15;
-  text-align: left;
+  text-align: center;
 }
 .before-the-bulb .question:focus { outline: none; }
 
-/* Choices: two cards, OR badge between them. */
-.before-the-bulb .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; }
-.before-the-bulb .choices:not(:empty):before {
-  content: 'OR';
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 45%;
-  transform: translate(-50%, -50%);
-  width: 43px;
-  height: 43px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--pf-paper);
-  border: 1px solid var(--pf-control-line);
-  font-size: 11px;
-  letter-spacing: 1px;
-  font-weight: 800;
-  color: var(--pf-green);
-}
+/* Choices: two cards. No OR badge between them (removed 2026-11-19):
+ * no researched app labels the junction — Duolingo, Kahoot, Quizlet
+ * all present bare options and the tap itself is the choice. The
+ * question already frames the binary. */
+.before-the-bulb .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 .before-the-bulb .choice-card {
   --accent: #b35939;
@@ -119,13 +109,13 @@
 }
 
 .before-the-bulb .object-name {
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -.6px;
   line-height: 1.2;
   max-width: 100%;
   overflow-wrap: break-word;
-  padding: 20px 20px 0;
+  padding: 16px 20px 0;
 }
 .before-the-bulb .choice-status {
   font-size: 12px;
@@ -152,9 +142,11 @@
 .before-the-bulb .definition-toggle:focus-visible { outline-offset: -4px; }
 .before-the-bulb .definition { padding: 4px 18px 16px; background: var(--pf-paper); text-align: center; color: var(--pf-muted); font-size: 14px; margin: 0; }
 
-.before-the-bulb .reassurance { text-align: center; color: var(--pf-muted); font-size: 12px; margin: 26px 0 0; }
-
-/* Reveal: result header, date pair, fact box, sources, next. */
+/* Reveal: result header, date pair, fact box, sources, next.
+ * (The per-round reveal now lives in the shared ResultReveal; the
+ * `.reveal` container rules below serve the end-of-game results
+ * screen only. `.dates` / `.fact` / source rules style the slots
+ * inside ResultReveal's body.) */
 .before-the-bulb .reveal {
   margin-top: 22px;
   background: #fff;
@@ -173,7 +165,7 @@
 .before-the-bulb .mode-note strong { color: var(--pf-green); font-size: 12px; }
 .before-the-bulb .mode-note span { max-width: 330px; }
 
-.before-the-bulb .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+.before-the-bulb .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 0; }
 .before-the-bulb .date { border-left: 3px solid var(--pf-line); padding: 0 0 0 14px; }
 .before-the-bulb .date:first-child { border-color: var(--pf-green); }
 .before-the-bulb .date.is-earlier { border-color: var(--pf-green); }
@@ -182,7 +174,7 @@
 .before-the-bulb .date h3 { font-size: 14px; margin: 3px 0 7px; }
 .before-the-bulb .date p { font-size: 12px; color: var(--pf-muted); line-height: 1.5; margin: 0; }
 
-.before-the-bulb .fact { display: flex; align-items: start; gap: 12px; background: var(--pf-gold); border-radius: var(--pf-radius-control); padding: 16px; margin-top: 20px; }
+.before-the-bulb .fact { display: flex; align-items: start; gap: 12px; background: var(--pf-gold); border-radius: var(--pf-radius-control); padding: 16px; margin-top: 0; }
 .before-the-bulb .fact > span { font-size: 25px; }
 .before-the-bulb .fact h3 { font-size: 12px; margin: 1px 0 6px; }
 .before-the-bulb .fact p { font-size: 14px; margin: 0; }
@@ -208,12 +200,9 @@
 
 /* Phones: stacked cards, OR as its own row, banner capped at 150px. */
 @media (max-width: 600px) {
-  .before-the-bulb .shell { padding: 16px; }
-  .before-the-bulb .game { margin-top: 24px; }
+  .before-the-bulb .shell { padding: 12px 16px 24px; }
+  .before-the-bulb .game { margin-top: 12px; }
   .before-the-bulb .choices { grid-template-columns: 1fr; gap: 20px; }
-  .before-the-bulb .choices:not(:empty):before { position: static; transform: none; grid-row: 2; justify-self: center; width: 43px; height: 43px; font-size: 11px; }
-  .before-the-bulb .choice-card:first-child { grid-row: 1; }
-  .before-the-bulb .choice-card:nth-child(2) { grid-row: 3; }
   .before-the-bulb .choice-card { background: var(--pf-paper); }
   .before-the-bulb .object-art:has(img) { aspect-ratio: auto; height: 150px; }
   .before-the-bulb .choice-letter { left: 12px; top: 12px; }
@@ -230,4 +219,26 @@
   .before-the-bulb .mode-note span { max-width: 260px; }
   .before-the-bulb footer { font-size: 10px; margin-top: 25px; flex-wrap: wrap; }
   .before-the-bulb .result-spark { display: none; }
+}
+
+/* Minimal top row (Kombai, 2026-11-19): one row holds the whole frame —
+ * exit, the settings dropdown, the score — so the question is the next
+ * thing on screen. The dropdown is the shell's own `<details>` menu
+ * (QuizShell), reused without the GameBar title and status line.
+ * The menu opens centred under the toggle instead of right-aligned.
+ * Mirrors Balls' `.wg-top`; the round label is Bulb's own word,
+ * "Discovery" / "Wild card", and the answer headline keeps the old
+ * result heading size. */
+.bb-top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;min-height:44px;margin-bottom:4px}
+.bb-top-x{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--pf-muted);font-size:22px;line-height:1;cursor:pointer;text-decoration:none}
+.bb-top .qs-menu{justify-self:center}
+.bb-top .qs-menu-body{left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100vw - 32px))}
+.bb-top .qs-menu-body .pf-pill-group + .pf-pill-group{margin-top:12px}
+.bb-settings-restart{margin-top:12px}
+.bb-top-score{font-size:16px;font-weight:800;color:var(--pf-green);white-space:nowrap}
+.bb-top-lives{color:var(--pf-muted);font-weight:700}
+.bb-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--pf-muted)}
+.bb-answer-line{font-size:24px;font-weight:800;letter-spacing:-.7px;line-height:1.2;margin:0}
+@media (max-width: 600px) {
+  .bb-answer-line{font-size:22px}
 }
