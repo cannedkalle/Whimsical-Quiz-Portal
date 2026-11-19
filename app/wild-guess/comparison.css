@@ -1,9 +1,8 @@
 .wg-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.wg-choice-grid button { display: flex; min-height: 230px; padding: 0; border: 2px solid var(--pf-control-line); border-radius: 24px; background: var(--pf-surface); color: var(--pf-ink); flex-direction: column; align-items: stretch; text-align: left; overflow: hidden; }
+.wg-choice-grid button { display: flex; min-height: 190px; padding: 0; border: 2px solid var(--pf-control-line); border-radius: 24px; background: var(--pf-surface); color: var(--pf-ink); flex-direction: column; align-items: stretch; text-align: left; overflow: hidden; }
 .wg-choice-grid button:hover:not(:disabled), .wg-choice-grid button:focus-visible { border-color: var(--pf-green); background: var(--pf-leaf-soft); transform: translateY(-2px); }
 .wg-option-emoji { display: block; font-size: 58px; line-height: 1; margin-bottom: 18px; }
-.wg-choice-grid strong { font-size: clamp(20px, 2.4vw, 28px); line-height: 1.12; }
-.wg-pick-label { margin-top: 18px; color: var(--pf-green); font-size: 13px; font-weight: 800; }
+.wg-choice-grid strong { font-size: clamp(18px, 2.2vw, 24px); line-height: 1.12; }
 .wg-comparison-reveal > h2 { max-width: 650px; margin: 5px 0 22px; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; }
 .wg-reveal-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
 .wg-reveal-sides article { position: relative; min-width: 0; padding: 0; border: 1px solid var(--pf-line); border-radius: 24px; background: var(--pf-surface); overflow: hidden; }
@@ -14,7 +13,6 @@
 .wg-scale-answer strong { display: block; color: var(--pf-ink); font-size: 24px; line-height: 1.1; }
 .wg-reveal-sides .wg-reveal-detail { color: var(--pf-muted); font-size: 14px; line-height: 1.45; }
 .wg-reveal-sides .wg-reveal-note { color: var(--pf-muted); font-size: 14px; line-height: 1.45; margin-top: 8px; }
-.wg-winner-mark { display: inline-block; margin-top: 14px; padding: 6px 9px; border-radius: 12px; background: var(--pf-green); color: white; font-size: 12px; font-weight: 800; }
 
 @media (max-width: 560px) {
   .wg-choice-grid, .wg-reveal-sides { grid-template-columns: 1fr; }
@@ -25,7 +23,7 @@
  * card's side padding uniformly, so label, value, and detail share one
  * alignment edge in the option and in the reveal alike. */
 .wg-choice-grid .wg-choice-photo { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 24px 24px 0 0; }
-.wg-choice-grid .wg-choice-text { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 18px 24px 24px; }
+.wg-choice-grid .wg-choice-text { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px 24px 16px; flex: 1; justify-content: center; }
 .wg-reveal-sides .wg-reveal-photo { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 24px 24px 0 0; }
 .wg-reveal-sides .wg-reveal-text { padding: 18px 24px 24px; }
 /* Where a photo loads, it replaces the emoji; a failed image leaves no photo
@@ -34,10 +32,9 @@
 .wg-reveal-sides article:has(.wg-reveal-photo) .wg-option-emoji { display: none; }
 
 @media (max-width: 560px) {
-  .wg-choice-grid .wg-choice-text { padding: 16px 16px 16px; }
+  .wg-choice-grid .wg-choice-text { padding: 12px 16px; }
   .wg-reveal-sides .wg-reveal-text { padding: 16px 16px 16px; }
-  .wg-choice-grid .wg-choice-text .wg-option-emoji { font-size: 34px; margin-bottom: 6px; }
-  .wg-choice-grid .wg-choice-text .wg-pick-label { margin-top: 8px; }
+  .wg-choice-grid .wg-choice-text .wg-option-emoji { font-size: 56px; margin-bottom: 10px; }
 }
 
 /* Phones: cap the flush banner at 150px tall (cropped), the same cap as
@@ -48,9 +45,18 @@
   .wg-choice-grid .wg-choice-photo, .wg-reveal-sides .wg-reveal-photo { aspect-ratio: auto; height: 150px; }
 }
 
+/* Verdict wash (Kahoot pattern, 2026-11-19): the whole page floods
+ * with the verdict colour the instant the choice marks itself — the
+ * player's screen IS the feedback. Same soft verdict tints as the
+ * cards, so the page stays readable; the big Correct/Incorrect word
+ * in the reveal below carries the verdict in text, never colour
+ * alone. The wash clears when the next round is dealt. */
+.wg{transition:background-color .2s ease-out}
+.wg.is-correct{background:var(--pf-leaf-soft)}
+.wg.is-wrong{background:var(--pf-peach-soft)}
 /* Verdict in place (redesign 2026-11-18): the tapped choice marks itself
  * the instant it is picked — winner green, wrong pick red, the other side
- * dims — before the dialog opens a beat later. Disabled cards keep full
+ * dims — before the reveal scrolls into view a beat later. Disabled cards keep full
  * opacity so the verdict colours read; only the loser dims. */
 .wg-choice-grid button{position:relative}
 .wg .wg-choice-grid button:disabled{opacity:1}
@@ -60,21 +66,19 @@
 .wg-verdict-mark{position:absolute;top:12px;right:12px;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--pf-surface);font-size:18px;font-weight:800}
 .wg-choice-grid button.is-correct .wg-verdict-mark{color:var(--pf-green)}
 .wg-choice-grid button.is-wrong .wg-verdict-mark{color:var(--pf-error)}
-.wg-choice-grid button.is-wrong .wg-pick-label{color:var(--pf-error)}
 
 /* "Show details" toggle in the result dialog: a quiet text button under
  * the reveal sides. The dialog shows the trimmed reveal by default. */
 .wg-details-toggle{display:block;margin:14px auto 0;padding:6px 10px;border:0;background:none;color:var(--pf-ink);font:inherit;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .wg-details-toggle:focus-visible{outline:2px solid var(--pf-ink);outline-offset:2px;border-radius:6px}
 
-/* v4 (Kai 2026-11-19): the dialog repeats nothing from the board — no
- * photos, no cards. Only the new learning, as plain text rows: label,
- * scale answer, winner mark; details stay behind "Show details". */
-.wg-reveal-rows{display:flex;flex-direction:column}
-.wg-reveal-row{padding:14px 2px}
-.wg-reveal-row + .wg-reveal-row{border-top:1px solid var(--pf-line)}
-.wg-reveal-rows .wg-scale-answer{margin:0}
-.wg-reveal-row .wg-winner-mark{margin-top:8px}
-.wg-reveal-rows .wg-reveal-detail{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:8px 0 0}
-.wg-reveal-rows .wg-reveal-note{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:8px 0 0}
-.wg-row-short{font-weight:700;color:var(--pf-ink)}
+/* v8 (Kai 2026-11-19): the dialog shows the correct choice only —
+ * one flowing line, short + scale, after the big verdict. No rows,
+ * no winner pill, no scattered fragments: the line reads as one
+ * sentence. The correct side's detail and note lines sit behind
+ * "Show details", same as before. */
+.wg-correct-choice{padding:2px 0}
+.wg-correct-line{margin:0;font-size:20px;line-height:1.4}
+.wg-correct-line strong{font-weight:800}
+.wg-correct-choice .wg-reveal-detail{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:10px 0 0}
+.wg-correct-choice .wg-reveal-note{color:var(--pf-muted);font-size:14px;line-height:1.45;margin:8px 0 0}

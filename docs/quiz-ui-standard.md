@@ -14,9 +14,10 @@ The sets below govern the five quizzes.
 
 The shell (`app/components/QuizShell.jsx`) is the single controller for
 game chrome on phones. Games own their question content and choice
-layout; the reveal is the shared result dialog
-(`app/components/ResultDialog.jsx`) — everything else below is
-uniform, with no per-game exceptions.
+layout; the reveal is the shared inline module
+(`app/components/ResultReveal.jsx`). Balls in the Ballpark pilots the
+minimal frame (see the note under the frame list); the other four
+games keep the frame below until their rollout.
 
 ### Frame, top to bottom
 
@@ -55,38 +56,57 @@ art below); the frame does not grow.
    ("Which came first?", "Which one is the outsider?", Twin's prompt).
    No flavor eyebrow, no instruction paragraph; the choices carry the
    meaning.
+
+   **Minimal frame (Balls pilot, Kai 2026-11-19, Kombai Hoppo):** a
+   photo round summed to ~890px of parts in an 844px viewport, so
+   Balls drops rows 1–3 above for one top row: ✕ back to all games,
+   the shell's own settings dropdown (mode, category, Start over
+   inside it — the pills were already in the dropdown, never rows
+   on the page), and a ✓ score with lives hearts in 3-lives mode.
+   The status sentence becomes a small-caps ROUND N label above the
+   question; the question is centred at 24px; the board card goes
+   (no border, no padding), so the question and cards sit straight
+   on the paper. Cards drop the "Pick this one" line, labels go
+   20px to 18px, photos stay 150px. The other four games keep rows
+   1–4 until their rollout.
 5. **Choices.** Game-owned layout, under the fit rule. Choice controls
    are at least 44px tall; the game bar's 36px controls are the one
    deliberate exception, bought for the one-row bar.
 6. **Reveal.** Two beats. First the verdict lands on the board where
    the player tapped: the picked choice marks itself right or wrong
-   in place (winner marked, the other side dims), and the score line
-   updates. A beat later a dialog (`ResultDialog`) opens over the
-   question and choices, which stay rendered behind it. It scrolls,
-   and the fit rule does not apply to it. The dialog carries only
-   the learning — right answer as the title, revealed image if any,
-   one brief explanation — and a game whose round has no learning
-   content opens no dialog at all. Trimmed by default (Kai 2026-11-19:
-   the dialog showed too much all at once, then ruled the dialog must
-   not repeat the board): in Balls the title is the player's pick in
-   its short form, and the rows are ordered around the pick — your
-   scale first, the other side second with its short label and scale,
-   winner marked — no photos, no cards, no full sentences. Each
-   subject carries a `short` (max 3 words, action kept; the board
-   keeps the full labels); the detail lines sit behind a
-   "Show details" button under the rows that reveals them on demand
-   ("Hide details" to collapse again), reset each round. The verdict
-   band stays in the dialog (Kai 2026-11-19: without it he could not
-   tell right from wrong — the dialog covers the board's verdict);
-   the band is one line, mark plus kicker, and nothing else in the
-   dialog repeats the board. Its shape is the same in every
-   game: verdict band where the game keeps one (the game's own
-   kicker, kept verbatim; Balls hides it, the verdict is already on
-   the board), content arriving in beats (title, then each reveal
-   piece), and a sticky Next footer. A "Dive deeper" button appears
+   in place (winner marked, the other side dims), the score line
+   updates, and the whole page floods with the verdict colour —
+   the Kahoot pattern (Kai 2026-11-19: the question does not fit one
+   screen, so a bottom sheet made no sense). A beat later the
+   feedback block (`ResultReveal`) scrolls into view below the
+   choices and focuses its hero title; it lives in the page flow,
+   so it works at any page height, and the fit rule does not apply
+   to it. The reveal carries only the learning — the verdict up
+   front, then the right answer, revealed image if any, one brief
+   explanation — and a game whose round has no learning content
+   shows no reveal at all. One shared module
+   (`app/components/ResultReveal.jsx`, styles in `quiz-shell.css`):
+   a game adopts it by filling the slots (verdict, title, answer,
+   media, brief, details, Next); the reveal owns the hero, the
+   beats, and the footer. Trimmed by default (Kai 2026-11-19: the dialog
+   showed too much all at once, then ruled the feedback must not
+   repeat the board): in Balls the verdict hero is the heading
+   itself — one big word, "Correct" / "Incorrect", with the mark —
+   and the body shows only the correct choice, its short and scale
+   as one flowing line, no photos, no cards, no full sentences.
+   Each subject carries a `short` (max 3 words, action kept; the
+   board keeps the full labels); the correct side's detail lines
+   sit behind a "Show details" button under the line that reveals
+   them on demand ("Hide details" to collapse again), reset each
+   round. The verdict word is plain (Kai 2026-11-19: the kicker
+   lines "You called it!" / "Plot twist!" were lame); the old
+   `kicker` slot is gone. Its shape is the same in every game: big
+   verdict first, content arriving in beats (hero, then the body,
+   then the footer — the whole sequence under a second), and a
+   Next footer in the flow. A "Dive deeper" button appears
    only where the game used to show a long explanation (Bulb,
-   Outsider); games with no long content show no button. The dialog
-   closes only via its Next button. Its Next button reads "Next
+   Outsider); games with no long content show no button. The reveal
+   advances only via its Next button. Its Next button reads "Next
    round"; when the game is over it reads "See results" instead.
 7. **Results screen.** Kicker "10 rounds done!" (10-question mode) or
    "Out of lives!" (lives mode), score summary, Play again (primary).

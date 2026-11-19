@@ -1,21 +1,22 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import PortalNav from '../components/PortalNav';
-import { GameBar, StatusLine } from '../components/QuizShell';
 import { buildReveal, clearProgress, generateComparison, loadProgress, saveProgress } from '../../lib/wild-guess/client-game.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import { WILD_GUESS_IMAGES } from '../../lib/wild-guess/images.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
 import { ArrowRightIcon } from "../components/Icons";
-import ResultDialog from '../components/ResultDialog';
+import ResultReveal from '../components/ResultReveal';
 
 /* Balls in the Ballpark, played entirely in the browser: matchups are dealt
  * from the catalog that lives in the repo, and progress is kept in the
  * player's own browser storage. No server database is involved, so the game
  * works on the live site — and offline once installed — like the portal's
- * other games. Frame follows the mobile UI standard: GameBar row,
- * slim status line, then the matchup. */
+ * other games. Frame is minimal (Kombai, 2026-11-19): one top row — exit,
+ * the settings dropdown, the score — then the matchup. The dropdown is
+ * the shell's own `<details>` menu, reused without the GameBar title and
+ * status line; the mode/category pills were already inside it, never
+ * rows on the page. */
 
 /* Option-card photo: looked up by subject id, hidden if it fails to load
  * so the card always works with text alone. */
@@ -39,11 +40,9 @@ export default function Game() {
   const [streak, setStreak] = useState(0);
   const [over, setOver] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  /* The dialog opens a beat after the verdict lands on the board
-   * (see the effect below), so `dialogOpen` is separate from `reveal`. */
-  const [dialogOpen, setDialogOpen] = useState(false);
-  /* The dialog shows the trimmed reveal (photo, label, scale) by default;
-   * the detail and note lines sit one tap away behind "Show details". */
+  /* The sheet shows the correct choice only — one flowing line,
+   * short + scale — after the big verdict. The detail and note
+   * lines for that side sit behind "Show details". */
   const [showDetails, setShowDetails] = useState(false);
   /* Category filter: 'mixed' deals from all categories (the default),
    * otherwise only that category. */
@@ -89,7 +88,6 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
-    setDialogOpen(false);
     setShowDetails(false);
     saveProgress({ leftId: next.left.id, rightId: next.right.id, category: next.category, position: 0, played: 0, correct: 0 });
   };
@@ -120,18 +118,10 @@ export default function Game() {
       startFresh();
     }
   }, []);
-  /* Focus the question when a round is dealt. While the result dialog
-   * is open it focuses its own title, so the question is not focused
+  /* Focus the question when a round is dealt. While the reveal is
+   * shown it focuses its own title, so the question is not focused
    * then; Next clears the reveal and focus returns here. */
   useEffect(() => { if (comparison && !reveal) heading.current?.focus(); }, [comparison, reveal]);
-  /* Verdict first, on the board: the dialog opens 400ms after the
-   * choice marks itself, so the player sees the verdict where they
-   * tapped it before the dialog carries the learning. */
-  useEffect(() => {
-    if (!reveal || showResults) return undefined;
-    const timer = window.setTimeout(() => setDialogOpen(true), 400);
-    return () => window.clearTimeout(timer);
-  }, [reveal, showResults]);
 
   const choose = (choice) => {
     if (!comparison || reveal) return;
@@ -167,7 +157,6 @@ export default function Game() {
   };
 
   const next = () => {
-    setDialogOpen(false);
     setShowDetails(false);
     if (queued) {
       setComparison(queued);
@@ -191,9 +180,26 @@ export default function Game() {
     saveProgress({ leftId: nextComparison.left.id, rightId: nextComparison.right.id, category: nextComparison.category, position: nextPosition, played, correct });
   };
 
-  const pickShort = reveal ? reveal.sides[reveal.choice].short : '';
+  const correctSide = reveal ? reveal.sides[reveal.correctChoice] : null;
 
-  return <><PortalNav/><main className="wg"><GameBar title="Balls in the Ballpark" onStartOver={startFresh} settingsSummary={`${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} · ${(CATEGORIES.find((cat) => cat.id === category) || {}).label}`}><div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div><div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div></GameBar><StatusLine round={reveal ? played : played + 1} total={playMode === 'ten' ? 10 : null} correct={correct} played={played} streak={streak} lives={playMode === 'lives' ? lives : null} /><div className="wg-layout"><section className="wg-board">
+  /* The settings menu is the shell's own `<details>` dropdown
+   * (QuizShell): a pick inside collapses it again, so the question is
+   * the next thing on screen. The toggle itself is not a button, so
+   * opening and closing the menu by tapping it is unaffected. */
+  const closeOnPick = (event) => {
+    if (event.target.closest && event.target.closest('button')) event.currentTarget.open = false;
+  };
+
+  const round = reveal ? played : played + 1;
+
+  return <main className={reveal ? `wg is-${reveal.correct ? 'correct' : 'wrong'}` : 'wg'}><div className="wg-layout"><div className="wg-top">
+    <a className="wg-top-x" href="/" aria-label="Back to all games">✕</a>
+    <details className="qs-menu" onClick={closeOnPick}>
+      <summary className="qs-menu-toggle">{`${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} · ${(CATEGORIES.find((cat) => cat.id === category) || {}).label}`}<span aria-hidden="true"> ▾</span></summary>
+      <div className="qs-menu-body"><div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div><div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div><button className="pf-btn wg-settings-restart" type="button" onClick={startFresh}>Start over</button></div>
+    </details>
+    <span className="wg-top-score">✓ {correct}{playMode === 'lives' ? <span className="wg-top-lives"> · ♥ {lives}</span> : null}</span>
+  </div><section className="wg-board">
     {error && <div className="wg-error" role="alert">{error} <button className="pf-btn" onClick={startFresh}>Start over</button></div>}
     {!comparison ? <div className="wg-loading">Finding a curious matchup…</div> : <>
       {over && showResults ? <div className="wg-finish" role="status">
@@ -202,17 +208,17 @@ export default function Game() {
         <p className="wg-final-score">{correct}<span> / {played} right</span></p>
         <button className="pf-primary" onClick={startFresh}>Play again <ArrowRightIcon /></button>
       </div> : <>
+        <p className="wg-round">Round {round}{playMode === 'ten' ? ' of 10' : ''}</p>
         <h2 className="wg-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h2>
-        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={reveal ? (index === reveal.correctChoice ? 'is-correct' : index === reveal.choice ? 'is-wrong' : 'is-dim') : ''} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="wg-verdict-mark" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="wg-verdict-mark" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong><span className="wg-pick-label">{reveal ? (index === reveal.choice ? (reveal.correct ? 'Your pick ✓' : 'Your pick ✗') : '') : 'Pick this one'}</span></span></button>)}</div>
+        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={reveal ? (index === reveal.correctChoice ? 'is-correct' : index === reveal.choice ? 'is-wrong' : 'is-dim') : ''} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="wg-verdict-mark" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="wg-verdict-mark" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong></span></button>)}</div>
+        {reveal && <ResultReveal
+          verdict={reveal.correct ? 'correct' : 'wrong'}
+          title={reveal.correct ? 'Correct' : 'Incorrect'}
+          answer={<><div className="wg-correct-choice"><p className="wg-correct-line"><strong>{correctSide.short}</strong>{' \u2014 '}{correctSide.scale}</p>{showDetails ? <p className="wg-reveal-detail">{correctSide.detail}</p> : null}{showDetails && correctSide.note ? <p className="wg-reveal-note">{correctSide.note}</p> : null}</div><button type="button" className="wg-details-toggle" onClick={() => setShowDetails((v) => !v)}>{showDetails ? 'Hide details' : 'Show details'}</button></>}
+          nextLabel={over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}
+          onNext={over ? () => setShowResults(true) : () => next()}
+        />}
       </>}
     </>}
-  </section></div><ResultDialog
-    open={dialogOpen}
-    verdict={reveal?.correct ? 'correct' : 'wrong'}
-    kicker={reveal?.correct ? 'You called it!' : 'Plot twist!'}
-    title={pickShort}
-    answer={reveal ? <><div className="wg-reveal-rows">{[reveal.sides[reveal.choice], reveal.sides[1 - reveal.choice]].map((option, order) => <div className={option === reveal.sides[reveal.correctChoice] ? 'wg-reveal-row is-winner' : 'wg-reveal-row'} key={option.label}><p className="wg-scale-answer">{order === 1 ? <><span className="wg-row-short">{option.short}</span>{' \u2014 '}</> : null}<strong>{option.scale}</strong></p>{showDetails ? <p className="wg-reveal-detail">{option.detail}</p> : null}{showDetails && option.note ? <p className="wg-reveal-note">{option.note}</p> : null}{option === reveal.sides[reveal.correctChoice] && <span className="wg-winner-mark">{reveal.prompt.includes('shorter gap') ? 'Shorter gap ✓' : reveal.prompt.includes('moves or grows faster') ? 'Faster ✓' : reveal.prompt.includes('more time') ? 'More time ✓' : reveal.prompt.includes('greater length') ? 'Greater length ✓' : reveal.prompt.includes('weighs') ? 'Heavier ✓' : reveal.prompt.includes('area') ? 'More area ✓' : reveal.prompt.includes('space') ? 'More space ✓' : 'More ✓'}</span>}</div>)}</div><button type="button" className="wg-details-toggle" onClick={() => setShowDetails((v) => !v)}>{showDetails ? 'Hide details' : 'Show details'}</button></> : null}
-    nextLabel={over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}
-    onNext={over ? () => { setDialogOpen(false); setShowResults(true); } : () => { setDialogOpen(false); next(); }}
-  /></main></>;
+  </section></div></main>;
 }
