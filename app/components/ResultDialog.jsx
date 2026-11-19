@@ -12,6 +12,12 @@ import { useEffect, useId, useRef, useState } from 'react';
  *
  * Slots (all but open/verdict/kicker/title/nextLabel/onNext optional):
  * - verdict: 'correct' | 'wrong' | 'close' | 'neutral' (give-up).
+ * - showVerdict: hide the verdict band when the game already shows
+ *   the verdict where the player tapped and the dialog never covers
+ *   it. Default true. Balls hid it in the first split-moment build
+ *   (2026-11-18) but the band came back 2026-11-19: the dialog
+ *   covers the board, so the player could not tell right from wrong
+ *   while it was open.
  *   Only the verdict colour varies; the dialog itself stays neutral
  *   paper in every game.
  * - kicker: the game's own verdict line, kept verbatim.
@@ -44,6 +50,7 @@ const VERDICT_MARKS = { correct: '✓', wrong: '✗', close: '✓', neutral: nul
 export default function ResultDialog({
   open,
   verdict,
+  showVerdict = true,
   kicker,
   title,
   answer = null,
@@ -88,12 +95,14 @@ export default function ResultDialog({
         if (event.target === dialogRef.current) event.preventDefault();
       }}
     >
-      <div className={`rd-verdict is-${verdict}`}>
-        {VERDICT_MARKS[verdict] && (
-          <span className="rd-mark" aria-hidden="true">{VERDICT_MARKS[verdict]}</span>
-        )}
-        <p className="rd-kicker">{kicker}</p>
-      </div>
+      {showVerdict && (
+        <div className={`rd-verdict is-${verdict}`}>
+          {VERDICT_MARKS[verdict] && (
+            <span className="rd-mark" aria-hidden="true">{VERDICT_MARKS[verdict]}</span>
+          )}
+          <p className="rd-kicker">{kicker}</p>
+        </div>
+      )}
       <div className="rd-body">
         <h2 id={titleId} ref={titleRef} tabIndex={-1} className="rd-title">{title}</h2>
         {answer}
