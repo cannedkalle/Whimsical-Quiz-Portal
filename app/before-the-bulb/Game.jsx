@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import PortalNav from '../components/PortalNav';
+import ResultReveal from '../components/ResultReveal';
 import { createGame } from '../../lib/before-the-bulb/game.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import { ArrowRightIcon } from "../components/Icons";
-import { GameBar, StatusLine } from "../components/QuizShell";
 import {
   objectMap,
   objects,
@@ -75,8 +74,6 @@ export default function Game() {
   const dealNext = (gameObj) => track(gameObj.next(recentRef.current));
   const focusRequest = useRef(null);
   const questionRef = useRef(null);
-  const nextRef = useRef(null);
-  const revealRef = useRef(null);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -88,9 +85,6 @@ export default function Game() {
     if (!snap) return;
     if (focusRequest.current === 'question') {
       questionRef.current?.focus({ preventScroll: true });
-    } else if (focusRequest.current === 'next') {
-      nextRef.current?.focus({ preventScroll: true });
-      revealRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     }
     focusRequest.current = null;
   }, [snap]);
@@ -133,7 +127,6 @@ export default function Game() {
     const result = game.answer(id);
     if (!result) return;
     setDefOpen({});
-    focusRequest.current = 'next';
     setSnap(result);
     const wasCorrect = result.selected === result.pair.earlierObjectId;
     const nextLivesCount = nextLives(playMode, lives, wasCorrect);
@@ -171,6 +164,13 @@ export default function Game() {
     setSnap(track(game.reset(recentRef.current)));
   };
 
+  /* The settings dropdown is the shell's own `<details>` menu
+   * (QuizShell), reused without the GameBar: picking a setting
+   * collapses the menu. */
+  const closeOnPick = (event) => {
+    if (event.target.closest && event.target.closest('button')) event.currentTarget.open = false;
+  };
+
   const activeMode = MODES[mode];
   const answered = snap !== null && snap.selected !== null;
   const pair = snap?.pair ?? null;
@@ -188,28 +188,37 @@ export default function Game() {
 
   return (
     <div className="before-the-bulb">
-      <main className="shell">
-      <PortalNav />
-      <GameBar title="Before the Bulb" onStartOver={handleRestart} settingsSummary={(PLAY_MODES.find((play) => play.id === playMode) || {}).label}>
-        <div className="qs-menu-group">
-          <span className="qs-menu-label">Pool</span>
-          <div className="pf-pill-group" role="group" aria-label="Game modes">
-            <button className="pf-pill" type="button" aria-pressed={mode === 'curated'} onClick={() => switchMode('curated')}>Curated</button>
-            <button className="pf-pill" type="button" aria-pressed={mode === 'wild'} onClick={() => switchMode('wild')}>Wild</button>
-          </div>
+      <main className={answered && !(over && showResults) ? `shell is-${isCorrect ? 'correct' : 'wrong'}` : 'shell'}>
+        <div className="bb-top">
+          <a className="bb-top-x" href="/" aria-label="Back to all games">✕</a>
+          <details className="qs-menu" onClick={closeOnPick}>
+            <summary className="qs-menu-toggle">{`${mode === 'curated' ? 'Curated' : 'Wild'} · ${(PLAY_MODES.find((play) => play.id === playMode) || {}).label}`}<span aria-hidden="true"> ▾</span></summary>
+            <div className="qs-menu-body">
+              <div className="qs-menu-group">
+                <span className="qs-menu-label">Pool</span>
+                <div className="pf-pill-group" role="group" aria-label="Game modes">
+                  <button className="pf-pill" type="button" aria-pressed={mode === 'curated'} onClick={() => switchMode('curated')}>Curated</button>
+                  <button className="pf-pill" type="button" aria-pressed={mode === 'wild'} onClick={() => switchMode('wild')}>Wild</button>
+                </div>
+              </div>
+              <div className="qs-menu-group">
+                <span className="qs-menu-label">Play</span>
+                <div className="pf-pill-group" role="group" aria-label="Play mode">
+                  {PLAY_MODES.map((play) => (
+                    <button className="pf-pill" key={play.id} type="button" aria-pressed={playMode === play.id} onClick={() => switchPlayMode(play.id)}>{play.label}</button>
+                  ))}
+                </div>
+              </div>
+              <button className="pf-btn bb-settings-restart" type="button" onClick={handleRestart}>Start over</button>
+            </div>
+          </details>
+          <span className="bb-top-score">✓ {snap ? snap.correct : 0}{playMode === 'lives' ? <span className="bb-top-lives"> · ♥ {lives}</span> : null}</span>
         </div>
-        <div className="qs-menu-group">
-          <span className="qs-menu-label">Play</span>
-          <div className="pf-pill-group" role="group" aria-label="Play mode">
-            {PLAY_MODES.map((play) => (
-              <button className="pf-pill" key={play.id} type="button" aria-pressed={playMode === play.id} onClick={() => switchPlayMode(play.id)}>{play.label}</button>
-            ))}
-          </div>
-        </div>
-      </GameBar>
         <section className="game" aria-labelledby="question">
-      {snap && <StatusLine round={answered ? snap.answered : snap.answered + 1} total={playMode === 'ten' ? 10 : null} correct={snap.correct} played={snap.answered} streak={streak} lives={playMode === 'lives' ? lives : null} />}
-      <h1 id="question" className="question" tabIndex={-1} ref={questionRef}>Which came first?</h1>
+          {snap && (
+            <p className="bb-round">{activeMode.roundLabel} {answered ? snap.answered : snap.answered + 1}{playMode === 'ten' ? ' of 10' : ''}</p>
+          )}
+          <h1 id="question" className="question" tabIndex={-1} ref={questionRef}>Which came first?</h1>
           {over && showResults ? (
             <section className="reveal" aria-labelledby="results-title">
               <div className="result-top">
@@ -293,7 +302,7 @@ export default function Game() {
                         )}
                       </span>
                       <strong className="object-name">{object.name}</strong>
-                      <span className="choice-status">{status}</span>
+                      {answered && <span className="choice-status">{status}</span>}
                     </button>
                     <button
                       className="definition-toggle"
@@ -319,62 +328,53 @@ export default function Game() {
               })}
           </div>
           {answered && (
-            <section
-              className="reveal"
-              aria-labelledby="result-title"
-              ref={revealRef}
-            >
-              <div className="result-top">
-                <div>
-                  <p className="eyebrow" id="feedback">
-                    {isCorrect
-                      ? 'YOU’VE GOT A BRIGHT MIND!'
-                      : 'A LITTLE SURPRISE!'}
-                  </p>
-                  <h2 id="result-title">{`${earlier.name} came first!`}</h2>
+            <ResultReveal
+              verdict={isCorrect ? 'correct' : 'wrong'}
+              title={isCorrect ? 'Correct' : 'Incorrect'}
+              answer={
+                <>
+                  <h3 className="bb-answer-line">{`${earlier.name} came first!`}</h3>
+                  <div className="dates" id="dates">
+                    {snap.choices.map((id) => {
+                      const object = objectMap.get(id);
+                      const isEarlier = object.id === earlier.id;
+                      return (
+                        <div
+                          key={id}
+                          className={`date ${
+                            isEarlier ? 'is-earlier' : 'is-later'
+                          }`}
+                        >
+                          <span className="label">
+                            {isEarlier ? 'Came first' : 'Came later'}
+                          </span>
+                          <strong>{object.dateDisplay}</strong>
+                          <h3>{object.name}</h3>
+                          <p>{object.dateBasis}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              }
+              brief={
+                <div className="fact">
+                  <span aria-hidden="true">💡</span>
+                  <div>
+                    <h3 id="fact-heading">
+                      {pair.funFact
+                        ? 'A bright little fact'
+                        : 'A wild little thought'}
+                    </h3>
+                    <p id="fact">
+                      {pair.funFact ||
+                        'A wild time-travel matchup! Check the dates to see how far apart these ideas are.'}
+                    </p>
+                  </div>
                 </div>
-                <span className="result-spark" aria-hidden="true">
-                  ✦
-                </span>
-              </div>
-              <div className="dates" id="dates">
-                {snap.choices.map((id) => {
-                  const object = objectMap.get(id);
-                  const isEarlier = object.id === earlier.id;
-                  return (
-                    <div
-                      key={id}
-                      className={`date ${
-                        isEarlier ? 'is-earlier' : 'is-later'
-                      }`}
-                    >
-                      <span className="label">
-                        {isEarlier ? 'Came first' : 'Came later'}
-                      </span>
-                      <strong>{object.dateDisplay}</strong>
-                      <h3>{object.name}</h3>
-                      <p>{object.dateBasis}</p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="fact">
-                <span aria-hidden="true">💡</span>
-                <div>
-                  <h3 id="fact-heading">
-                    {pair.funFact
-                      ? 'A bright little fact'
-                      : 'A wild little thought'}
-                  </h3>
-                  <p id="fact">
-                    {pair.funFact ||
-                      'A wild time-travel matchup! Check the dates to see how far apart these ideas are.'}
-                  </p>
-                </div>
-              </div>
-              <div className="reveal-bottom">
-                <details id="source-details">
-                  <summary>Dates & sources</summary>
+              }
+              details={
+                <>
                   <p className="source-note">
                     Inventions take shape over time. These dates mark the
                     specific milestones shown above.
@@ -394,18 +394,12 @@ export default function Game() {
                       </div>
                     ) : null}
                   </div>
-                </details>
-                <button
-                  className="pf-primary"
-                  id="next"
-                  type="button"
-                  ref={nextRef}
-                  onClick={handleNext}
-                >
-                  {over ? <>See results <ArrowRightIcon /></> : <>Next discovery <ArrowRightIcon /></>}
-                </button>
-              </div>
-            </section>
+                </>
+              }
+              detailsLabel="Dates & sources"
+              nextLabel={over ? 'See results' : 'Next discovery'}
+              onNext={handleNext}
+            />
           )}
           <p
             className="sr-only"
@@ -416,11 +410,6 @@ export default function Game() {
           >
             {announcement}
           </p>
-          {!answered && (
-            <p className="reassurance" id="reassurance">
-              No timer. Just a little curiosity.
-            </p>
-          )}
             </>
           )}
         </section>
