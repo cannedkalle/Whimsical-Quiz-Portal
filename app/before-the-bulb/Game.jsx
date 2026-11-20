@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ResultReveal from '../components/ResultReveal';
+import { GameFooter, GameResults, MinimalTopBar } from '../components/QuizShell';
 import { createGame } from '../../lib/before-the-bulb/game.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
-import { ArrowRightIcon } from "../components/Icons";
 import {
   objectMap,
   objects,
@@ -23,17 +23,21 @@ const MODES = {
     pairs,
     title: 'Curated mode',
     description: 'Hand-picked matchups with a bright little fact.',
-    roundLabel: 'Discovery',
     poolLabel: `${objects.length} inventions · ${pairs.length} curated discoveries`,
   },
   wild: {
     pairs: wildPairs,
     title: 'Wild mode',
     description: 'Fun date pairings, from close cousins to wild contrasts.',
-    roundLabel: 'Wild card',
     poolLabel: `${objects.length} inventions · ${wildPairs.length} wild possibilities`,
   },
 };
+
+/* Photo credits, in the game's own order: one line per invention that can
+ * appear, from the same images data the cards use. */
+const CREDITS = objects
+  .filter((object) => BULB_IMAGES[object.id])
+  .map((object) => ({ id: object.id, name: object.name, ...BULB_IMAGES[object.id] }));
 
 function sourceLinks(ids) {
   return ids.map((id) => {
@@ -164,13 +168,6 @@ export default function Game() {
     setSnap(track(game.reset(recentRef.current)));
   };
 
-  /* The settings dropdown is the shell's own `<details>` menu
-   * (QuizShell), reused without the GameBar: picking a setting
-   * collapses the menu. */
-  const closeOnPick = (event) => {
-    if (event.target.closest && event.target.closest('button')) event.currentTarget.open = false;
-  };
-
   const activeMode = MODES[mode];
   const answered = snap !== null && snap.selected !== null;
   const pair = snap?.pair ?? null;
@@ -188,90 +185,55 @@ export default function Game() {
 
   return (
     <div className="before-the-bulb">
-      <main className={answered && !(over && showResults) ? `shell is-${isCorrect ? 'correct' : 'wrong'}` : 'shell'}>
-        <div className="bb-top">
-          <a className="bb-top-x" href="/" aria-label="Back to all games">✕</a>
-          <details className="qs-menu" onClick={closeOnPick}>
-            <summary className="qs-menu-toggle">{`${mode === 'curated' ? 'Curated' : 'Wild'} · ${(PLAY_MODES.find((play) => play.id === playMode) || {}).label}`}<span aria-hidden="true"> ▾</span></summary>
-            <div className="qs-menu-body">
-              <div className="qs-menu-group">
-                <span className="qs-menu-label">Pool</span>
-                <div className="pf-pill-group" role="group" aria-label="Game modes">
-                  <button className="pf-pill" type="button" aria-pressed={mode === 'curated'} onClick={() => switchMode('curated')}>Curated</button>
-                  <button className="pf-pill" type="button" aria-pressed={mode === 'wild'} onClick={() => switchMode('wild')}>Wild</button>
-                </div>
-              </div>
-              <div className="qs-menu-group">
-                <span className="qs-menu-label">Play</span>
-                <div className="pf-pill-group" role="group" aria-label="Play mode">
-                  {PLAY_MODES.map((play) => (
-                    <button className="pf-pill" key={play.id} type="button" aria-pressed={playMode === play.id} onClick={() => switchPlayMode(play.id)}>{play.label}</button>
-                  ))}
-                </div>
-              </div>
-              <button className="pf-btn bb-settings-restart" type="button" onClick={handleRestart}>Start over</button>
+      <main className={answered && !(over && showResults) ? `shell qs-game is-${isCorrect ? 'correct' : 'wrong'}` : 'shell qs-game'}>
+        <MinimalTopBar
+          settingsSummary={`${mode === 'curated' ? 'Curated' : 'Wild'} · ${(PLAY_MODES.find((play) => play.id === playMode) || {}).label}`}
+          onStartOver={handleRestart}
+          score={snap ? snap.correct : 0}
+          lives={lives}
+          showLives={playMode === 'lives'}
+        >
+          <div className="qs-menu-group">
+            <span className="qs-menu-label">Pool</span>
+            <div className="pf-pill-group" role="group" aria-label="Game modes">
+              <button className="pf-pill" type="button" aria-pressed={mode === 'curated'} onClick={() => switchMode('curated')}>Curated</button>
+              <button className="pf-pill" type="button" aria-pressed={mode === 'wild'} onClick={() => switchMode('wild')}>Wild</button>
             </div>
-          </details>
-          <span className="bb-top-score">✓ {snap ? snap.correct : 0}{playMode === 'lives' ? <span className="bb-top-lives"> · ♥ {lives}</span> : null}</span>
-        </div>
+          </div>
+          <div className="qs-menu-group">
+            <span className="qs-menu-label">Play</span>
+            <div className="pf-pill-group" role="group" aria-label="Play mode">
+              {PLAY_MODES.map((play) => (
+                <button className="pf-pill" key={play.id} type="button" aria-pressed={playMode === play.id} onClick={() => switchPlayMode(play.id)}>{play.label}</button>
+              ))}
+            </div>
+          </div>
+        </MinimalTopBar>
         <section className="game" aria-labelledby="question">
-          {snap && (
-            <p className="bb-round">{activeMode.roundLabel} {answered ? snap.answered : snap.answered + 1}{playMode === 'ten' ? ' of 10' : ''}</p>
-          )}
-          <h1 id="question" className="question" tabIndex={-1} ref={questionRef}>Which came first?</h1>
           {over && showResults ? (
-            <section className="reveal" aria-labelledby="results-title">
-              <div className="result-top">
-                <div>
-                  <p className="eyebrow">
-                    {playMode === 'ten' ? '10 QUESTIONS DONE!' : 'OUT OF LIVES!'}
-                  </p>
-                  <h2 id="results-title">Here is how you did.</h2>
-                </div>
-                <span className="result-spark" aria-hidden="true">
-                  ✦
-                </span>
-              </div>
-              <p className="score">
-                {snap.correct} / {snap.answered} correct
-              </p>
-              <div className="reveal-bottom">
-                <p className="mode-note">
-                  {playMode === 'ten'
-                    ? 'Ten discoveries, one score.'
-                    : `You got ${snap.correct} right in ${snap.answered} discoveries.`}
-                </p>
-                <button
-                  className="pf-primary"
-                  type="button"
-                  onClick={handleRestart}
-                >
-                  Play again <ArrowRightIcon />
-                </button>
-              </div>
-            </section>
+            <GameResults
+              kicker={playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}
+              correct={snap.correct}
+              played={snap.answered}
+              onPlayAgain={handleRestart}
+            />
           ) : (
             <>
+          {snap && (
+            <p className="qs-round">Round {answered ? snap.answered : snap.answered + 1}{playMode === 'ten' ? ' of 10' : ''}</p>
+          )}
+          <h1 id="question" className="qs-question" tabIndex={-1} ref={questionRef}>Which came first?</h1>
           <div
             className="choices"
             id="choices"
             aria-label="Choose the earlier invention"
           >
             {snap &&
-              snap.choices.map((id, index) => {
+              snap.choices.map((id) => {
                 const object = objectMap.get(id);
                 const image = BULB_IMAGES[object.id];
                 const isEarlier = answered && id === earlier.id;
                 const isChosen = answered && id === snap.selected;
-                const status = !answered
-                  ? 'Tap to choose'
-                  : isEarlier
-                    ? isChosen
-                      ? '✓ You got it! Came first'
-                      : '✓ This one came first'
-                    : isChosen
-                      ? 'Your guess · came later'
-                      : 'Came later';
                 return (
                   <article
                     key={id}
@@ -286,9 +248,8 @@ export default function Game() {
                       aria-label={`Choose ${object.name}`}
                       onClick={() => handleAnswer(id)}
                     >
-                      <span className="choice-letter" aria-hidden="true">
-                        {index === 0 ? 'A' : 'B'}
-                      </span>
+                      {answered && isEarlier && <span className="qs-verdict-mark is-correct" aria-hidden="true">✓</span>}
+                      {answered && isChosen && !isEarlier && <span className="qs-verdict-mark is-wrong" aria-hidden="true">✗</span>}
                       <span className="object-art" aria-hidden="true">
                         {image && (
                           <img
@@ -302,7 +263,6 @@ export default function Game() {
                         )}
                       </span>
                       <strong className="object-name">{object.name}</strong>
-                      {answered && <span className="choice-status">{status}</span>}
                     </button>
                     <button
                       className="definition-toggle"
@@ -413,28 +373,7 @@ export default function Game() {
             </>
           )}
         </section>
-        <footer>
-          <span>
-            Made for curious minds <span aria-hidden="true">✦</span>
-          </span>
-          <span id="pool">{snap ? activeMode.poolLabel : ''}</span>
-        </footer>
-        <details className="image-credits">
-          <summary>Photo credits</summary>
-          <ul>
-            {objects
-              .filter((object) => BULB_IMAGES[object.id])
-              .map((object) => {
-                const image = BULB_IMAGES[object.id];
-                return (
-                  <li key={object.id}>
-                    {object.name}: Photo: {image.author}, {image.license},{' '}
-                    <a href={image.page}>via Wikimedia Commons</a>
-                  </li>
-                );
-              })}
-          </ul>
-        </details>
+        <GameFooter poolLabel={snap ? activeMode.poolLabel : ''} credits={CREDITS} />
         <noscript>
           <p>
             This game needs JavaScript enabled to show its invention cards.

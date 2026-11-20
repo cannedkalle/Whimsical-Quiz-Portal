@@ -5,8 +5,9 @@
  * - No bare h1/h2/h3/p selectors. The old `.before-the-bulb h1` rule
  *   (clamp 34–53px) outranked the shared `.qs-bar-title` and forced the
  *   GameBar title to 34px on phones, so it wrapped to two rows. The
- *   question is now `.question`, styled here; the GameBar title is
- *   styled only by quiz-shell.css (18px on phones, one row).
+ *   question is the shared `.qs-question` (quiz-shell.css); the
+ *   GameBar title is styled only by quiz-shell.css (18px on phones,
+ *   one row).
  * - No dead rules: the pre-shell brand row, score strip, and mode
  *   pickers are gone from the markup, so they are gone here too.
  * - No reveal shrink: photo cards keep the full banner at reveal, the
@@ -23,25 +24,8 @@
  * Bulb text stays centered: its cards do not transform at reveal, so
  * there is no center-to-left jump to avoid (unlike Balls). */
 
-.before-the-bulb .shell { max-width: 1176px; margin: auto; padding: 12px 32px 24px; transition: background-color .2s ease-out; }
-/* Kahoot wash (2026-11-19): the page floods with the verdict colour the
- * instant a choice marks itself, same soft tints as Balls. */
-.before-the-bulb .shell.is-correct { background: var(--pf-leaf-soft); }
-.before-the-bulb .shell.is-wrong { background: var(--pf-peach-soft); }
+.before-the-bulb .shell { max-width: 1176px; margin: auto; padding: 12px 32px 24px; }
 .before-the-bulb .game { max-width: 880px; margin: 12px auto 0; }
-
-/* Question: the only h1 this sheet styles. Centred, per the minimal
- * frame (Kombai, 2026-11-19): the question is the next thing on
- * screen after the one-row top bar. */
-.before-the-bulb .question {
-  margin: 8px 0 16px;
-  font-size: clamp(24px, 3vw, 32px);
-  font-weight: 800;
-  letter-spacing: -.5px;
-  line-height: 1.15;
-  text-align: center;
-}
-.before-the-bulb .question:focus { outline: none; }
 
 /* Choices: two cards. No OR badge between them (removed 2026-11-19):
  * no researched app labels the junction — Duolingo, Kahoot, Quizlet
@@ -51,8 +35,7 @@
 
 .before-the-bulb .choice-card {
   --accent: #b35939;
-  border: 1px solid var(--pf-line);
-  border-bottom-width: 3px;
+  border: 2px solid var(--pf-control-line);
   border-radius: var(--pf-radius-card);
   background: var(--pf-surface);
   overflow: hidden;
@@ -80,22 +63,6 @@
 }
 .before-the-bulb .pick:focus-visible { outline-offset: -5px; border-radius: 22px; }
 
-/* Letter badge sits on the photo, so it needs the paper background. */
-.before-the-bulb .choice-letter {
-  position: absolute;
-  left: 19px;
-  top: 16px;
-  z-index: 1;
-  font-size: 11px;
-  font-weight: 800;
-  border: 1px solid var(--pf-control-line);
-  border-radius: var(--pf-radius-small);
-  padding: 2px 7px;
-  color: var(--pf-green);
-  background: var(--pf-paper);
-  opacity: 1;
-}
-
 /* Flush banner: photo fills the card top edge to edge. */
 .before-the-bulb .object-art { position: relative; overflow: hidden; width: 100%; margin: 0; font-size: 0; }
 .before-the-bulb .object-art:has(img) { aspect-ratio: 16 / 10; }
@@ -109,21 +76,13 @@
 }
 
 .before-the-bulb .object-name {
-  font-size: 22px;
+  font-size: clamp(18px, 2.2vw, 24px);
   font-weight: 800;
   letter-spacing: -.6px;
   line-height: 1.2;
   max-width: 100%;
   overflow-wrap: break-word;
-  padding: 16px 20px 0;
-}
-.before-the-bulb .choice-status {
-  font-size: 12px;
-  color: var(--accent);
-  font-weight: 700;
-  min-height: 18px;
-  margin-top: 0;
-  padding: 8px 20px 14px;
+  padding: 16px 20px 14px;
 }
 
 .before-the-bulb .definition-toggle {
@@ -142,34 +101,14 @@
 .before-the-bulb .definition-toggle:focus-visible { outline-offset: -4px; }
 .before-the-bulb .definition { padding: 4px 18px 16px; background: var(--pf-paper); text-align: center; color: var(--pf-muted); font-size: 14px; margin: 0; }
 
-/* Reveal: result header, date pair, fact box, sources, next.
- * (The per-round reveal now lives in the shared ResultReveal; the
- * `.reveal` container rules below serve the end-of-game results
- * screen only. `.dates` / `.fact` / source rules style the slots
- * inside ResultReveal's body.) */
-.before-the-bulb .reveal {
-  margin-top: 22px;
-  background: #fff;
-  border: 1px solid var(--pf-line);
-  border-radius: var(--pf-radius-card);
-  padding: 25px;
-  animation: btb-appear .22s ease-out;
-}
-@keyframes btb-appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.before-the-bulb .result-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.before-the-bulb .result-top .eyebrow { letter-spacing: 1px; margin: 0; }
-.before-the-bulb .result-top h2 { font-size: 24px; letter-spacing: -.7px; margin: 6px 0 0; }
-.before-the-bulb .result-spark { font-size: 40px; color: #ae7819; }
-.before-the-bulb .reveal .score { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; margin: 0; }
-.before-the-bulb .mode-note { display: flex; gap: 7px; align-items: baseline; color: var(--pf-muted); font-size: 12px; margin: 0; }
-.before-the-bulb .mode-note strong { color: var(--pf-green); font-size: 12px; }
-.before-the-bulb .mode-note span { max-width: 330px; }
-
+/* Reveal slots inside the shared ResultReveal: the date pair, the fact
+ * box, and the sources. The per-round reveal lives in the module; the
+ * end-of-game results screen is the shared GameResults. */
 .before-the-bulb .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 0; }
 .before-the-bulb .date { border-left: 3px solid var(--pf-line); padding: 0 0 0 14px; }
 .before-the-bulb .date:first-child { border-color: var(--pf-green); }
 .before-the-bulb .date.is-earlier { border-color: var(--pf-green); }
-.before-the-bulb .date .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--pf-muted); font-weight: 800; }
+.before-the-bulb .date .label { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--pf-muted); font-weight: 800; }
 .before-the-bulb .date strong { display: block; font-size: 27px; letter-spacing: -1px; color: var(--pf-green); }
 .before-the-bulb .date h3 { font-size: 14px; margin: 3px 0 7px; }
 .before-the-bulb .date p { font-size: 12px; color: var(--pf-muted); line-height: 1.5; margin: 0; }
@@ -179,66 +118,25 @@
 .before-the-bulb .fact h3 { font-size: 12px; margin: 1px 0 6px; }
 .before-the-bulb .fact p { font-size: 14px; margin: 0; }
 
-.before-the-bulb .reveal-bottom { display: flex; justify-content: space-between; align-items: start; gap: 20px; margin-top: 20px; }
-.before-the-bulb .reveal-bottom summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--pf-muted); min-height: 44px; padding: 13px 0; }
 .before-the-bulb .source-note, .before-the-bulb .source-item { font-size: 12px; line-height: 1.6; color: var(--pf-muted); margin-bottom: 12px; }
 .before-the-bulb .source-item a { font-weight: 700; }
 .before-the-bulb .source-item p { margin-top: 4px; }
-.before-the-bulb .reveal-bottom:has(details[open]) { flex-wrap: wrap; }
-.before-the-bulb .reveal-bottom details[open] { width: 100%; }
-.before-the-bulb .reveal-bottom:has(details[open]) .next { margin-left: auto; }
-
-.before-the-bulb footer { display: flex; justify-content: space-between; gap: 15px; color: var(--pf-muted); font-size: 11px; max-width: 800px; margin: 37px auto 5px; }
-.before-the-bulb footer span span { color: #aa7013; margin-left: 7px; }
-
-.before-the-bulb .image-credits { max-width: 800px; margin: 20px auto 0; color: var(--pf-muted); font-size: 12px; }
-.before-the-bulb .image-credits ul { list-style: none; padding: 0; margin: 8px 0 0; }
-.before-the-bulb .image-credits li { margin-bottom: 6px; line-height: 1.5; }
-.before-the-bulb .image-credits a { font-weight: 700; }
 
 .before-the-bulb .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-/* Phones: stacked cards, OR as its own row, banner capped at 150px. */
+/* Answer headline in the reveal: same size as Balls' correct-choice
+ * line (20px) — one size for the answer slot in both games. */
+.bb-answer-line{font-size:20px;font-weight:800;letter-spacing:-.7px;line-height:1.2;margin:0}
+
+/* Phones: stacked cards, banner capped at 150px. */
 @media (max-width: 600px) {
   .before-the-bulb .shell { padding: 12px 16px 24px; }
   .before-the-bulb .game { margin-top: 12px; }
   .before-the-bulb .choices { grid-template-columns: 1fr; gap: 20px; }
   .before-the-bulb .choice-card { background: var(--pf-paper); }
   .before-the-bulb .object-art:has(img) { aspect-ratio: auto; height: 150px; }
-  .before-the-bulb .choice-letter { left: 12px; top: 12px; }
-  .before-the-bulb .object-name { font-size: 21px; padding: 16px 16px 0; }
-  .before-the-bulb .choice-status { padding: 8px 16px 16px; }
-  .before-the-bulb .reveal { padding: 20px; }
-  .before-the-bulb .result-top h2 { font-size: 22px; }
-  .before-the-bulb .reveal-bottom { flex-direction: column; gap: 8px; }
-  .before-the-bulb .reveal-bottom details { width: 100%; }
+  .before-the-bulb .object-name { padding: 16px 16px 14px; }
   .before-the-bulb .dates { gap: 12px; }
   .before-the-bulb .date { padding-left: 10px; }
   .before-the-bulb .date strong { font-size: 24px; }
-  .before-the-bulb .mode-note { width: 100%; justify-content: center; text-align: center; }
-  .before-the-bulb .mode-note span { max-width: 260px; }
-  .before-the-bulb footer { font-size: 10px; margin-top: 25px; flex-wrap: wrap; }
-  .before-the-bulb .result-spark { display: none; }
-}
-
-/* Minimal top row (Kombai, 2026-11-19): one row holds the whole frame —
- * exit, the settings dropdown, the score — so the question is the next
- * thing on screen. The dropdown is the shell's own `<details>` menu
- * (QuizShell), reused without the GameBar title and status line.
- * The menu opens centred under the toggle instead of right-aligned.
- * Mirrors Balls' `.wg-top`; the round label is Bulb's own word,
- * "Discovery" / "Wild card", and the answer headline keeps the old
- * result heading size. */
-.bb-top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;min-height:44px;margin-bottom:4px}
-.bb-top-x{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--pf-muted);font-size:22px;line-height:1;cursor:pointer;text-decoration:none}
-.bb-top .qs-menu{justify-self:center}
-.bb-top .qs-menu-body{left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100vw - 32px))}
-.bb-top .qs-menu-body .pf-pill-group + .pf-pill-group{margin-top:12px}
-.bb-settings-restart{margin-top:12px}
-.bb-top-score{font-size:16px;font-weight:800;color:var(--pf-green);white-space:nowrap}
-.bb-top-lives{color:var(--pf-muted);font-weight:700}
-.bb-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--pf-muted)}
-.bb-answer-line{font-size:24px;font-weight:800;letter-spacing:-.7px;line-height:1.2;margin:0}
-@media (max-width: 600px) {
-  .bb-answer-line{font-size:22px}
 }
