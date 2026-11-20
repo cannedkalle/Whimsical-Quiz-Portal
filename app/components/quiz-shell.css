@@ -38,49 +38,122 @@
 }
 /* Result reveal (app/components/ResultReveal.jsx). One shape for
  * every quiz game's answer: verdict hero, body, Next footer. The
- * Kahoot pattern: the page itself floods with the verdict colour —
- * the game puts `is-correct` / `is-wrong` on its page element — and
- * this feedback block lives in the page flow below the choices, so
- * it works at any page height. Only the verdict colour varies per
- * outcome; the block itself is neutral paper in every game. Every
- * quiz page imports this reveal, so the reveal styles travel with
- * the shell. */
-.rr-reveal{display:grid;gap:0;margin-top:20px;border:1px solid var(--pf-line);border-radius:20px;background:var(--pf-paper);color:var(--pf-ink);overflow:hidden}
+ * Kahoot pattern as Kai picked it: the answers overlay the options —
+ * the feedback is a fixed overlay covering the whole screen, the
+ * verdict colour flooding it, with Next pinned to the bottom of
+ * the viewport so it is never buried. The inline block below the
+ * choices put Next below the fold on a phone; the overlay does not.
+ * The game still applies the wash to its page element (`is-correct`
+ * / `is-wrong` on `qs-game`) — that is the 400ms beat, the page
+ * flooding and the choice marking itself before the overlay
+ * appears, in the same tint, so the overlay arriving is seamless.
+ * Only the verdict colour varies per outcome; the content sits
+ * directly on the tint, no paper card. The overlay's content
+ * scrolls internally when it is taller than the screen (long
+ * details); Next stays pinned. Short content centres itself in
+ * the scroll area. Every quiz page imports this reveal, so the
+ * reveal styles travel with the shell. */
+.rr-overlay{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;color:var(--pf-ink)}
+.rr-overlay.is-correct,.rr-overlay.is-close{background:var(--pf-leaf-soft)}
+.rr-overlay.is-wrong{background:var(--pf-peach-soft)}
+.rr-overlay.is-neutral{background:var(--pf-paper)}
+.rr-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.rr-inner{margin:auto;width:100%;max-width:880px;padding:24px 16px}
 /* The verdict is the hero: one big word with the mark, "Correct" /
  * "Incorrect" — no kicker line, no separate title below it. The
- * heading lives in the hero. */
-.rr-verdict{display:flex;align-items:center;gap:12px;padding:20px;font-weight:800}
-.rr-verdict.is-correct,.rr-verdict.is-close{background:var(--pf-leaf-soft);color:var(--pf-green)}
-.rr-verdict.is-wrong{background:var(--pf-peach-soft);color:var(--pf-error)}
-.rr-verdict.is-neutral{background:var(--pf-line);color:var(--pf-muted)}
+ * heading lives in the hero, directly on the tint. */
+.rr-verdict{display:flex;align-items:center;gap:12px;font-weight:800}
+.rr-verdict.is-correct,.rr-verdict.is-close{color:var(--pf-green)}
+.rr-verdict.is-wrong{color:var(--pf-error)}
+.rr-verdict.is-neutral{color:var(--pf-muted)}
 .rr-mark{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;background:var(--pf-surface);font-size:24px}
-.rr-body{display:grid;gap:16px;align-content:start;padding:20px}
+.rr-body{display:grid;gap:16px;align-content:start;padding-top:20px}
 .rr-title{margin:0;font-size:32px;line-height:1.1;font-weight:800;letter-spacing:-.5px}
 .rr-title:focus{outline:none}
 .rr-brief{font-size:17px;line-height:1.55}
 .rr-brief p{margin:0}
 .rr-deep-toggle{width:100%}
 .rr-details{display:grid;gap:12px;border-top:1px solid var(--pf-line);padding-top:16px}
-.rr-footer{padding:16px 20px 20px;border-top:1px solid var(--pf-line)}
-.rr-next{width:100%}
+/* Next is pinned to the viewport bottom — always visible, never
+ * below the fold — and clears the home indicator. */
+.rr-footer{flex-shrink:0;display:flex;justify-content:center;padding:16px 20px calc(20px + env(safe-area-inset-bottom));border-top:1px solid var(--pf-line)}
+.rr-next{width:100%;max-width:880px}
 
-/* Staged entrance: the block's content arrives one beat at a time
+/* Staged entrance: the overlay's content arrives one beat at a time
  * instead of all at once — the hero first, then the body, then the
  * footer. The beats are the reveal's own; a game's answer block
  * rides with the body as one beat, so no game class is named here.
  * The animations restart on every reveal: they run on mount, and
- * the block mounts fresh with each round. */
+ * the overlay mounts fresh with each round. */
 @keyframes rr-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.rr-reveal .rr-body{animation:rr-rise .3s ease .18s both}
-.rr-reveal .rr-footer{animation:rr-rise .3s ease .32s both}
+.rr-overlay .rr-body{animation:rr-rise .3s ease .18s both}
+.rr-overlay .rr-footer{animation:rr-rise .3s ease .32s both}
 @media (prefers-reduced-motion: reduce){
-  .rr-reveal .rr-body,.rr-reveal .rr-footer{animation:none}
+  .rr-overlay .rr-body,.rr-overlay .rr-footer{animation:none}
 }
 
 @media(max-width:600px){
-  .rr-verdict{padding:16px}
-  .rr-body{padding:16px}
   .rr-title{font-size:26px}
   .rr-mark{width:36px;height:36px;font-size:20px}
-  .rr-footer{padding:12px 16px 16px}
+  .rr-footer{padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+}
+
+/* Minimal game frame (Kombai, 2026-11-19) — the shared frame Balls and
+ * Bulb use, in QuizShell.jsx: one top row (exit, settings dropdown,
+ * score), the round label, the centred question, the verdict wash, the
+ * results screen, and the footer with photo credits. The other games
+ * still use GameBar + StatusLine until their rollout; this block is
+ * the frame they will adopt. The game column is 880px in every game;
+ * a choice card is a 2px border on the control line, radius the card
+ * token (24px). Small text has one size: 12px for labels (round,
+ * menu, card status), 13px for the results kicker, 14px for detail
+ * and body text inside the reveal. */
+/* Verdict wash (Kahoot pattern): the page floods with the verdict
+ * colour the instant a choice marks itself. The game puts
+ * `is-correct` / `is-wrong` on its `qs-game` main; the wash clears on
+ * the results screen. */
+.qs-game{transition:background-color .2s ease-out}
+.qs-game.is-correct{background:var(--pf-leaf-soft)}
+.qs-game.is-wrong{background:var(--pf-peach-soft)}
+/* One row holds the whole frame — exit, the settings dropdown, the
+ * score — so the question is the next thing on screen. The menu opens
+ * centred under the toggle instead of right-aligned. */
+.qs-top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;min-height:44px;margin-bottom:4px}
+.qs-top-x{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--pf-muted);font-size:22px;line-height:1;cursor:pointer;text-decoration:none}
+.qs-top .qs-menu{justify-self:center}
+.qs-top .qs-menu-body{left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100vw - 32px))}
+.qs-top .qs-menu-body .pf-pill-group + .pf-pill-group{margin-top:12px}
+.qs-settings-restart{margin-top:12px}
+.qs-top-score{font-size:16px;font-weight:800;color:var(--pf-green);white-space:nowrap}
+.qs-top-lives{color:var(--pf-muted);font-weight:700}
+.qs-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--pf-muted)}
+.qs-question{font-size:clamp(24px,3vw,32px);line-height:1.17;margin:8px 0 16px;letter-spacing:-.5px;text-align:center}
+.qs-question:focus{outline:none}
+/* Verdict mark on a choice card: the tapped choice marks itself in
+ * place — ✓ on the right answer, ✗ on the wrong pick — before the
+ * reveal scrolls into view. The state class sits on the mark itself,
+ * so the same mark works on either game's card. */
+.qs-verdict-mark{position:absolute;top:12px;right:12px;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--pf-surface);font-size:18px;font-weight:800}
+.qs-verdict-mark.is-correct{color:var(--pf-green)}
+.qs-verdict-mark.is-wrong{color:var(--pf-error)}
+/* Results screen: one shape for every game — kicker, heading, big
+ * score, Play again. The score is the hero; no mode-note restating
+ * it, no spark. */
+.qs-results{margin-top:22px}
+.qs-results-kicker{margin:0 0 8px;font-size:13px;font-weight:800;color:var(--accent)}
+.qs-results h2{margin:16px 0}
+.qs-final-score{margin:0 0 24px;font-size:64px;font-weight:800}
+.qs-final-score span{font-size:20px;font-weight:500}
+/* Footer + photo credits: page furniture, same on every game — the
+ * tagline, the pool label, and the collapsed credits list (the
+ * attribution the hotlinked photos require). */
+.qs-footer{display:flex;justify-content:space-between;gap:15px;color:var(--pf-muted);font-size:11px;max-width:800px;margin:37px auto 5px}
+.qs-footer .qs-spark{color:#aa7013;margin-left:7px}
+.qs-credits{max-width:800px;margin:20px auto 0;color:var(--pf-muted);font-size:12px}
+.qs-credits ul{list-style:none;padding:0;margin:8px 0 0}
+.qs-credits li{margin-bottom:6px;line-height:1.5}
+.qs-credits a{font-weight:700}
+
+@media(max-width:600px){
+  .qs-footer{font-size:10px;margin-top:25px;flex-wrap:wrap}
 }
