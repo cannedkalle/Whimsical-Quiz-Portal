@@ -60,24 +60,36 @@ export default function Game() {
    * pairing does not come straight back. The history lives for the whole
    * page session: Play again and mode switches never clear it, so a fresh
    * game never re-deals a recent pairing. Every deal stays an independent
-   * random draw — there is no deck, no fixed order, no sequence to learn. */
+   * random draw — there is no deck, no fixed order, no sequence to learn.
+   * A deal never gives up on the first failure: if the draw comes back
+   * empty it retries with the recent-pair history cleared, then from any
+   * category, so Start over and Next can never leave the player stuck on
+   * a stale round. */
   const deal = (categoryOverride) => {
     const cat = categoryOverride ?? category;
-    const next = generateComparison(cat === 'mixed' ? undefined : cat, { pairIds: historyRef.current });
+    const draw = (c, avoidIds) =>
+      generateComparison(c === 'mixed' ? undefined : c, { pairIds: avoidIds });
+    let next = draw(cat, historyRef.current);
+    if (!next) {
+      historyRef.current = [];
+      next = draw(cat, []);
+    }
+    if (!next) {
+      historyRef.current = [];
+      next = draw(undefined, []);
+    }
     if (next) {
       historyRef.current = [...historyRef.current, next.id].slice(-12);
     }
     return next;
   };
 
+  /* Start over resets first and deals second, so a failed deal can never
+   * leave the player stuck on a stale round: the score, round and error
+   * are cleared unconditionally, and only then is a fresh matchup dealt. */
   const startFresh = (categoryOverride) => {
-    const next = deal(categoryOverride);
-    if (!next) {
-      setError('No matchups are available yet.');
-      return;
-    }
     clearProgress();
-    setComparison(next);
+    setComparison(null);
     setPosition(0);
     setPlayed(0);
     setCorrect(0);
@@ -88,6 +100,12 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
+    const next = deal(categoryOverride);
+    if (!next) {
+      setError('No matchups are available yet.');
+      return;
+    }
+    setComparison(next);
     saveProgress({ leftId: next.left.id, rightId: next.right.id, category: next.category, position: 0, played: 0, correct: 0 });
   };
 
