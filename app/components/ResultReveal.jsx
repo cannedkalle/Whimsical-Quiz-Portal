@@ -41,9 +41,12 @@ import { useEffect, useId, useRef, useState } from 'react';
  * - brief: one short explanation, always visible.
  * - details: long content, shown only behind Dive deeper. When a game
  *   has no long content it passes nothing and no button renders —
- *   never a dead button.
- * - nextLabel: 'Next round' (Bulb keeps 'Next discovery'), or
- *   'See results' when the game is over.
+ *   never a dead button. The toggle label is 'Dive deeper' in every
+ *   game (the default); no game passes its own label.
+ * - nextLabel: 'Next round' in every game, or 'See results' when the
+ *   game is over. The label is shared frame wording, so no game keeps
+ *   its own variant (Bulb's 'Next discovery' was unified to this in
+ *   the 2026-11-23 holistic fix).
  *
  * Behaviour (decision D1): the reveal advances only via Next / See
  * results. There is no close, no backdrop, no Esc — Next is the

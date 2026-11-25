@@ -2,7 +2,7 @@
  * shared system (pf-btn, pf-pill-group, pf-primary) and the quiz shell
  * (app/components/quiz-shell.css); this file holds only the game's own
  * layout: the hint tiles, the category grid, the give-up choices grid,
- * and the reveal panel. */
+ * and the reveal image. */
 .twin-terms{padding-top:32px}
 .th-layout{max-width:820px}
 .th-board{padding:32px;border:1px solid var(--pf-line);border-radius:24px;background:var(--pf-surface);min-width:0}
@@ -13,7 +13,6 @@
 .th-hint-b{background:var(--pf-gold-soft);color:var(--pf-ink)}
 .th-plus{font-size:28px;font-weight:800;color:var(--pf-muted)}
 .th-mark{display:inline-grid;place-items:center;background:var(--pf-gold);border-radius:50%;width:1.4em;height:1.4em;font-size:30px;font-weight:800;transform:rotate(10deg)}
-.th-prompt{font-size:17px;color:var(--pf-muted);text-align:center;margin:0 0 24px}
 .th-give-up{display:block;margin:24px auto 0}
 .th-categories{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .th-legend{font-size:13px;color:var(--pf-muted);text-align:center;margin:16px 0 0}
@@ -23,16 +22,6 @@
 .th-options button.is-correct,.th-categories button.is-correct{border-color:var(--pf-green);background:var(--pf-leaf-soft);color:var(--pf-green)}
 .th-options button.is-wrong,.th-categories button.is-wrong{border-color:var(--pf-error);background:var(--pf-peach-soft);color:var(--pf-error)}
 .th-options button:disabled:not(.is-correct):not(.is-wrong),.th-categories button:disabled:not(.is-correct):not(.is-wrong){opacity:.55}
-.th-reveal{margin-top:24px;padding:20px;border:1px solid var(--pf-line);border-radius:16px}
-.th-reveal.is-correct{background:var(--pf-leaf-soft)}
-.th-reveal.is-wrong{background:var(--pf-peach-soft)}
-.th-result-kicker{font-size:14px;font-weight:800;margin-bottom:8px}
-.th-reveal h2{margin:0 0 8px}
-.th-specific{margin:0 0 8px;font-weight:700}
-.th-why{color:var(--pf-muted);margin:0 0 20px}
-.th-finish h2{margin:16px 0}
-.th-final-score{font-size:64px;font-weight:800}
-.th-final-score span{font-size:20px;font-weight:500}
 .th-board button:disabled{cursor:default}
 @media(max-width:760px){.twin-terms{padding:16px 16px 40px}.th-board{padding:24px}}
 @media(max-width:560px){.th-options{grid-template-columns:1fr}.th-categories{grid-template-columns:1fr 1fr}.th-hints{gap:10px}.th-hint{padding:12px 18px}}

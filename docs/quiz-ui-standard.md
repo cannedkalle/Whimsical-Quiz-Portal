@@ -1,27 +1,20 @@
 # Quiz UI standard
 
-Two separate sets: a mobile set and a desktop set. The mobile set is
-formalized below and governs phone widths. The desktop set is not yet
-formalized; its section at the end records current behavior only.
+One frame for all five quiz games — Balls in the Ballpark, Before the
+Bulb, Name Quest, Animal Outsider, Twin Terms — and one set of play
+modes. The frame is the shared module set in
+`app/components/QuizShell.jsx` (`MinimalTopBar`, `GameResults`,
+`GameFooter`, styles in `quiz-shell.css`) plus the shared reveal
+(`app/components/ResultReveal.jsx`). No game re-implements the frame;
+a game fills the slots and keeps its own content, accent, photos,
+question wording, answer data, and content-selector options.
+Tango Cards (collecting), Marble Battles (a simulation), and Spin Draw
+(a drawing toy) are not quizzes: they live in their own home section
+and keep their own controls. The standard below governs the five
+quizzes. The mobile set is formalized; the desktop set is not yet
+formalized, and its section at the end records current behavior only.
 
-The five quiz games — Balls in the Ballpark, Before the Bulb, Name Quest,
-Animal Outsider, Twin Terms — share one frame and one set of play modes.
-Tango Cards (collecting) and Marble Battles (a simulation) are not
-quizzes: they live in their own home section and keep their own controls.
-The sets below govern the five quizzes.
-
-## Mobile UI standard
-
-The shell (`app/components/QuizShell.jsx`) is the single controller for
-game chrome on phones. Games own their question content and choice
-layout; the reveal is the shared inline module
-(`app/components/ResultReveal.jsx`). Balls in the Ballpark and Before
-the Bulb use the minimal frame, built from the shared modules in
-QuizShell.jsx (`MinimalTopBar`, `GameResults`, `GameFooter`, styles in
-`quiz-shell.css`); the other three games keep the frame below until
-their rollout.
-
-### Frame, top to bottom
+## The frame, top to bottom
 
 With the settings menu collapsed, the whole quiz — question plus all
 choices — is visible without scrolling on a 390×844 phone. That is the
@@ -29,152 +22,91 @@ fit rule, and it outranks any single element's size: if a game's content
 cannot fit under it, the content shrinks (see the open decision on Bulb
 art below); the frame does not grow.
 
-1. **Row 1: PortalNav.** Site title + icon on the left, Back to all
-   apps on the right, one row. The row is flush with the game below:
-   no side margins stack on the page padding. Bottom padding 12px plus
-   border.
-2. **Row 2: GameBar.** Game name + Start over + one options dropdown,
-   in a single row. Every setting a game has (play mode, difficulty,
-   content pool) lives in the dropdown, closed by default, with the
-   current choices summarized on the toggle. In the minimal frame the
-   summary is "{primary setting} · {play mode}" ("Endless · Mixed",
-   "Curated · Endless") — the same shape in every game. Picking a
-   setting collapses the menu again and resets the score,
-   exactly as a visible control row did. No kicker, no tagline, no
-   separate picker rows.
-3. **Status line.** One small plain-text line, never a box or a pill:
-   "Round N · X right · Y played · streak Z", plus lives hearts and
-   the word "lives" in 3-lives mode. 12px, muted, semibold,
-   margin-bottom 10px. Every quiz game tracks a streak (consecutive
-   correct rounds); a wrong answer or give-up resets it. Rounds are
-   always numbered "Round N" ("Round N of 10" in 10-question mode),
-   and the line shows the round being played, including during the
-   reveal.
-4. **Question line.** One row: the question itself, left-aligned
-   ("Which came first?", "Which one is the outsider?", Twin's prompt).
-   No flavor eyebrow, no instruction paragraph; the choices carry the
-   meaning.
-
-   **Minimal frame (Balls pilot, Kai 2026-11-19, Kombai Hoppo):** a
-   photo round summed to ~890px of parts in an 844px viewport, so
-   Balls drops rows 1–3 above for one top row: ✕ back to all games,
-   the shell's own settings dropdown (mode, category, Start over
-   inside it — the pills were already in the dropdown, never rows
-   on the page), and a ✓ score with lives hearts in 3-lives mode.
-   The status sentence becomes a small-caps ROUND N label above the
-   question; the question is centred at 24px; the board card goes
-   (no border, no padding), so the question and cards sit straight
-   on the paper. Cards drop the "Pick this one" line, labels go
-   20px to 18px, photos stay 150px.
-
-   **Shared minimal frame (Kai 2026-11-19, unification):** the top
-   row, the round label, the question, the verdict wash, the results
-   screen, and the footer with photo credits are one shared module
-   set (`MinimalTopBar`, `GameResults`, `GameFooter` in QuizShell.jsx,
-   styles in `quiz-shell.css`) — no game re-implements them. The
-   round label is "ROUND N" in every game (the label is shared
-   chrome; a game's own voice lives in its content, not in the
-   frame). The game column is 880px; a choice card is a 2px border
-   on the control line, radius the card token (24px). The verdict
-   lands on the card as a ✓/✗ mark in both games (Bulb's 12px
-   status line is gone — it also grew the card at reveal). The
-   answer line is 20px in both games; the choice name uses the same
-   clamp in both (18px on phones, 24px desktop); date labels are
-   12px, the small-text size. The footer and its collapsed credits
-   list are the same on both games (Balls: "212 subjects").
-
-   **Before the Bulb follows (Kai 2026-11-19):** the same one top
-   row (✕, "Curated · Endless ▾" with Pool and Play pills plus Start
-   over inside, ✓ score); the question is centred at 24px; names use
-   the Balls clamp; photos stay 150px, "What's this?" stays, the
-   letter badges are gone (nothing referenced them), the OR badge is
-   gone (2026-11-19, Kai approved after the design recommendation:
-   no researched app labels the junction — Duolingo, Kahoot,
-   Quizlet all present bare options and the tap is the choice;
-   removing its phone row bought ~60px of air), the
-   "No timer. Just a little curiosity." line goes. A photo round
-   was ~1350px of parts in an 844px viewport; after the cut it
-   fits exactly at 844px, no scroll. The other three games keep
-   rows 1–4 until their rollout.
-5. **Choices.** Game-owned layout, under the fit rule. Choice controls
-   are at least 44px tall; the game bar's 36px controls are the one
-   deliberate exception, bought for the one-row bar.
-6. **Reveal.** Two beats. First the verdict lands on the board where
-   the player tapped: the picked choice marks itself right or wrong
-   in place (winner marked, the other side dims), the score line
-   updates, and the whole page floods with the verdict colour —
-   the Kahoot pattern (Kai 2026-11-19: the question does not fit one
-   screen, so a bottom sheet made no sense). A beat later the
-   feedback overlays the screen: the answers sit on top of the
-   options, not beneath them (Kai 2026-11-19: the inline block
-   below the choices buried the Next button below the fold on a
-   phone). `ResultReveal` is a fixed overlay covering the whole
-   viewport, the verdict colour flooding it, its content scrolling
-   internally when taller than the screen, and Next pinned to the
-   bottom of the viewport — always visible, never below the fold.
-   The page wash is the 400ms beat: the page floods and the choice
-   marks itself before the overlay appears, in the same tint, so
-   the overlay arriving is seamless. The reveal carries only the
-   learning — the verdict up front, then the right answer, revealed
-   image if any, one brief explanation — and a game whose round has
-   no learning content shows no reveal at all. One shared module
-   (`app/components/ResultReveal.jsx`, styles in `quiz-shell.css`):
-   a game adopts it by filling the slots (verdict, title, answer,
-   media, brief, details, Next); the reveal owns the hero, the
-   beats, and the footer. Trimmed by default (Kai 2026-11-19: the dialog
-   showed too much all at once, then ruled the feedback must not
-   repeat the board): in Balls the verdict hero is the heading
-   itself — one big word, "Correct" / "Incorrect", with the mark —
-   and the body shows only the correct choice, its short and scale
-   as one flowing line, no photos, no cards, no full sentences.
-   Each subject carries a `short` (max 3 words, action kept; the
-   board keeps the full labels); the detail lines for BOTH sides sit
-   behind the module's "Show details" (Dive deeper) button —
-   correct side first, each block labeled by its short, so the
-   reveal teaches the comparison, not only the right answer. The
-   module owns the toggle state (reset each round). The verdict word
-   is plain (Kai 2026-11-19: the kicker
-   lines "You called it!" / "Plot twist!" were lame); the old
-   `kicker` slot is gone. Its shape is the same in every game: big
-   verdict first, content arriving in beats (hero, then the body,
-   then the footer — the whole sequence under a second), and a
-   Next footer pinned to the viewport bottom. A "Dive deeper" button appears
-   only where the game used to show a long explanation (Bulb,
-   Outsider); games with no long content show no button. The reveal
-   advances only via its Next button. Its Next button reads "Next
-   round"; when the game is over it reads "See results" instead.
-   Bulb keeps "Next discovery" / "See results" and is the first
-   Dive deeper adoption: its answer slot is "{earlier} came
-   first!" plus the two date blocks (dates, names, dateBasis, in
-   choice order), its brief is the fact box, and its details are
-   the "Dates & sources" content (source note, per-object
-   ambiguity notes, source links, fun-fact source). Its kickers
-   ("YOU'VE GOT A BRIGHT MIND!" / "A LITTLE SURPRISE!") and the ✦
-   spark are gone with the hero, same as Balls' kickers.
-7. **Results screen.** One shared module (`GameResults` in
+1. **Top row: `MinimalTopBar`.** One row: ✕ back to all games, the
+   shell's own settings dropdown, and a ✓ score (lives appended in
+   3-lives mode). Every setting a game has (play mode, and its content
+   selector: category, content pool, difficulty, game mode, level)
+   lives in the dropdown, closed by default, with the current choices
+   summarized on the toggle. The summary is always
+   "{primary content} · {play mode}" — the content selector first,
+   play mode second ("Mixed · Endless", "Curated · Endless",
+   "Easy · Endless"); a game with no content selector summarizes
+   play mode alone. Menu groups run content-first, then Play mode,
+   each group a `.qs-menu-group` with a `.qs-menu-label` naming the
+   group and a `.pf-pill-group` with the options; the group label and
+   the pill group's aria-label say the same thing. Start over lives
+   inside the menu, after the groups. Picking a setting collapses
+   the menu again and resets the score, exactly as a visible control
+   row did. No kicker, no tagline, no separate picker rows.
+2. **Round label.** One small-caps line, `.qs-round`: "ROUND N"
+   ("ROUND N of 10" in 10-question mode). 12px, weight 800,
+   letter-spacing 2px. The label is shared chrome, so the word is the
+   same in every game; a game's own voice lives in its content, not
+   in the frame. Every quiz game tracks a streak (consecutive correct
+   rounds); a wrong answer or give-up resets it.
+3. **Question.** One `h1` with `.qs-question` in every game, centred,
+   `clamp(24px, 3vw, 32px)`. No flavor eyebrow, no instruction
+   paragraph; the choices carry the meaning. The question is the
+   heading; the thing being asked about (a name, a pair of words, a
+   set of animals) is the game's content below it.
+4. **Choices.** Game-owned layout, under the fit rule. Choice controls
+   are at least 44px tall. Every choice button also carries
+   `.qs-choice`, the shared hover/active token (lift, border change,
+   press, focus-visible ring, 150–300ms); a game's own hover rule may
+   set a stronger lift or border, but no choice is without feedback.
+5. **Reveal.** Two beats, one shared module (`ResultReveal`). First
+   the verdict lands on the board where the player tapped: the
+   picked choice marks itself right or wrong in place (winner
+   marked, the other side dims) and the whole page floods with the
+   verdict colour — the Kahoot pattern (Kai 2026-11-19: the question
+   does not fit one screen, so a bottom sheet made no sense). A beat
+   later (400ms) the feedback overlays the screen: the answers sit
+   on top of the options, not beneath them. `ResultReveal` is a fixed
+   overlay covering the whole viewport, the verdict colour flooding
+   it, its content scrolling internally when taller than the screen,
+   and Next pinned to the bottom of the viewport — always visible,
+   never below the fold. The reveal carries only new learning, reacts
+   to the player's choice, and does not repeat board photos/labels
+   or quote the question. A game adopts it by filling the slots
+   (verdict, title, answer, media, brief, details, Next); the reveal
+   owns the hero, the beats, and the footer. The verdict hero is the
+   heading itself — one big word, "Correct" / "Incorrect", with the
+   mark — and the body shows the answer complete without opening
+   anything: Balls shows both sides' scale and detail (correct side
+   first, each labeled by its short); Bulb shows both dates and
+   descriptions. Long content sits behind the module's "Dive deeper"
+   button — the one label in every game, shown only where a game has
+   long content (Bulb's sources, Outsider's family tree, Balls'
+   notes); games with no long content show no button. The module
+   owns the toggle state (reset each round). The reveal advances only
+   via its Next button, which reads "Next round" in every game; when
+   the game is over it reads "See results" instead.
+6. **Results screen.** One shared module (`GameResults` in
    QuizShell.jsx): kicker "10 rounds done!" (10-question mode) or
    "Out of lives!" (lives mode), heading "Here is how you did.",
    big 64px score "N / M right", Play again (primary). No mode-note
    restating the score, no spark.
+7. **Footer.** One shared module (`GameFooter` in QuizShell.jsx):
+   tagline "Made for curious minds", pool label (one count + noun —
+   "212 subjects", "336 inventions"), and the collapsed photo-credits
+   list built from the game's own images data.
 
-### Row 2 sizes (≤600px)
+### Sizes (≤600px)
 
-- Game name: 18px, weight 800.
-- Start over: icon only, 36px button, aria-label "Start over".
-- Dropdown toggle: 12px, weight 700, padding 6px 8px.
-- Gaps: 6px. Bar margin-bottom: 8px.
+- Top row: 44px exit target, 36px dropdown toggle (12px, weight 700),
+  16px score. Gaps: 8px.
+- Round label: 12px. Question: `clamp(24px, 3vw, 32px)`, centred.
 - The row fits one row at 390px width, and at 375px with the 16px page
-  padding below. At 601–760px the full row-2 layout applies (text Start
-  over, 13px toggle), since width allows it.
+  padding below.
+- Small text: 12px for labels (round, menu, card status), 13px for the
+  results kicker, 14px for detail and body text inside the reveal.
+  Frame small text uses #4a5a4f — 7.2:1 on the cream paper, 6.5:1 on
+  the leaf verdict tint — so the 12px labels keep a clear margin above
+  the 4.5:1 bar instead of sitting just above it.
 
 ### Page padding (phones, ≤600px)
 
 Shell pages: 16px sides, 16px top, uniformly. No per-game padding.
-
-### Row 1 flushness (≤760px)
-
-Row 1's flush rule applies at ≤760px, the widest width where the old
-nav margin appears. Above that, the desktop set will decide.
 
 ### Play modes (`lib/quiz-play.mjs`, same rules in both sets)
 
@@ -200,8 +132,8 @@ The same control looks the same in every game. Game content keeps its own
 accent (Bulb peach/blue, Animal leaf, Name Quest violet); only the chrome
 is uniform.
 
-- **Game title**: `.qs-bar-title` in the shell game bar (24px desktop,
-  18px on phones).
+- **Top row**: `.qs-top` in the shell (44px exit, centred dropdown,
+  score).
 - **Primary action**: `.pf-primary` (Next, Play again, See results).
 - **Secondary button**: `.pf-btn` (Start over, Restart, difficulty
   choices, panel controls). Pressed rectangular buttons show the shared
@@ -214,12 +146,15 @@ is uniform.
   own decorative marks (Bulb's sparkles, Wild-guess winner marks).
 - **Radii**: 12px small, 16px control, 24px card. Circles (50%) and
   progress bars keep their own shapes.
+- **Page titles**: "{Game} | Whimsical Quiz Portal" in every game
+  (via `pageTitle` in `lib/names.mjs`).
 
 ### Home sections (`lib/apps.js`)
 
 Each app carries a `section` field. The home page renders Quiz games
 first — Balls in the Ballpark, Name Quest, Animal Outsider, Before the
-Bulb, Twin Terms — then Non-quiz games — Tango Cards, Marble Battles.
+Bulb, Twin Terms — then Non-quiz games — Tango Cards, Marble Battles,
+Spin Draw.
 
 ### Open decisions (mobile)
 
@@ -228,7 +163,7 @@ Bulb, Twin Terms — then Non-quiz games — Tango Cards, Marble Battles.
   height (around 150px, still cropped) or accept scrolling on smaller
   phones. Decision open; the card design is unchanged until it is made.
 
-### Adoption (mobile)
+### Adoption
 
 All five quiz games use the frame, keeping their own content and
 accents. Content boxes — image+text, image-only, and text-only, in
@@ -238,8 +173,8 @@ question, option, and answer slots, at every count — are governed by
 ## Desktop UI standard
 
 Not yet formalized. Current behavior, recorded not blessed: the same
-shell structure at desktop sizes (24px bar title, text Start over,
-13px toggle, 13px status, 24–32px page padding); row 1 currently
+shell structure at desktop sizes (one top row, centred question,
+880px column, 2px card borders, 24–32px page padding); row 1 currently
 centered at 1176px via globals.css. Formalize after mobile.
 
 ## Exceptions (not quizzes)
@@ -247,3 +182,4 @@ centered at 1176px via globals.css. Formalize after mobile.
 - Marble Battles keeps Restart in its controls and has no play modes;
   it is a simulation, not a quiz.
 - Tango Cards has no rounds, so no Start over and no play modes.
+- Spin Draw has no rounds, so no Start over and no play modes.

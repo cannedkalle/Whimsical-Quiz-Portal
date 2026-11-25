@@ -13,11 +13,13 @@ import ResultReveal from '../components/ResultReveal';
  * from the catalog that lives in the repo, and progress is kept in the
  * player's own browser storage. No server database is involved, so the game
  * works on the live site — and offline once installed — like the portal's
- * other games. Frame is minimal (Kombai, 2026-11-19): one top row — exit,
- * the settings dropdown, the score — then the matchup. The dropdown is
- * the shell's own `<details>` menu, reused without the GameBar title and
- * status line; the mode/category pills were already inside it, never
- * rows on the page. */
+ * other games. Frame is the shared minimal frame (Kombai, 2026-11-19,
+ * unified across all five quizzes 2026-11-23): one top row — exit, the
+ * settings dropdown, the score — then the matchup. The dropdown is the
+ * shell's own `<details>` menu; the category/play-mode pills live
+ * inside it, never rows on the page. The photo's alt is empty on
+ * purpose: the button's own text already names the choice, and an
+ * alt repeating it doubled the button's accessible name. */
 
 /* Photo credits, in the game's own order: one line per subject that can
  * appear, from the same images data the cards use. */
@@ -28,7 +30,7 @@ function ChoicePhoto({ option, className = 'wg-choice-photo' }) {
   const [failed, setFailed] = useState(false);
   const image = WILD_GUESS_IMAGES[option.id];
   if (!image || failed) return null;
-  return <img className={className} src={image.thumb} alt={option.label} loading="lazy" onError={() => setFailed(true)} />;
+  return <img className={className} src={image.thumb} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }
 
 export default function Game() {
@@ -197,22 +199,29 @@ export default function Game() {
   };
 
   const correctSide = reveal ? reveal.sides[reveal.correctChoice] : null;
-  /* The other choice: the details behind "Show details" cover both
-   * sides, not only the right answer — each block labeled by its
-   * short, correct side first. */
+  /* The other choice: the visible answer covers both sides, not only
+   * the right answer — each block labeled by its short, correct side
+   * first. Only the notes stay behind Dive deeper. */
   const otherSide = reveal ? reveal.sides[1 - reveal.correctChoice] : null;
+  const hasNotes = Boolean(reveal && (correctSide.note || otherSide.note));
 
   const round = reveal ? played : played + 1;
 
   return <main className={reveal && !(over && showResults) ? `wg qs-game is-${reveal.correct ? 'correct' : 'wrong'}` : 'wg qs-game'}><div className="wg-layout"><MinimalTopBar
-    settingsSummary={`${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} · ${(CATEGORIES.find((cat) => cat.id === category) || {}).label}`}
+    settingsSummary={`${(CATEGORIES.find((cat) => cat.id === category) || {}).label} · ${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label}`}
     onStartOver={startFresh}
     score={correct}
     lives={lives}
     showLives={playMode === 'lives'}
   >
-    <div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div>
-    <div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div>
+    <div className="qs-menu-group">
+      <span className="qs-menu-label">Category</span>
+      <div className="pf-pill-group" role="group" aria-label="Category">{CATEGORIES.map((cat) => <button key={cat.id} className="pf-pill" type="button" aria-pressed={category === cat.id} onClick={() => switchCategory(cat.id)}>{cat.label}</button>)}</div>
+    </div>
+    <div className="qs-menu-group">
+      <span className="qs-menu-label">Play mode</span>
+      <div className="pf-pill-group" role="group" aria-label="Play mode">{PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}</div>
+    </div>
   </MinimalTopBar><section className="wg-board">
     {error && <div className="wg-error" role="alert">{error} <button className="pf-btn" onClick={startFresh}>Start over</button></div>}
     {!comparison ? <div className="wg-loading">Finding a curious matchup…</div> : <>
@@ -223,23 +232,20 @@ export default function Game() {
         onPlayAgain={startFresh}
       /> : <>
         <p className="qs-round">Round {round}{playMode === 'ten' ? ' of 10' : ''}</p>
-        <h2 className="qs-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h2>
-        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={reveal ? (index === reveal.correctChoice ? 'is-correct' : index === reveal.choice ? 'is-wrong' : 'is-dim') : ''} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="qs-verdict-mark is-correct" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="qs-verdict-mark is-wrong" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong></span></button>)}</div>
+        <h1 className="qs-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h1>
+        <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={`qs-choice${reveal ? (index === reveal.correctChoice ? ' is-correct' : index === reveal.choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="qs-verdict-mark is-correct" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="qs-verdict-mark is-wrong" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong></span></button>)}</div>
         {reveal && <ResultReveal
           verdict={reveal.correct ? 'correct' : 'wrong'}
           title={reveal.correct ? 'Correct' : 'Incorrect'}
-          answer={<div className="wg-correct-choice"><p className="wg-correct-line"><strong>{correctSide.short}</strong>{' \u2014 '}{correctSide.scale}</p></div>}
-          details={<>
-            <div>
-              <p className="wg-reveal-detail"><strong>{correctSide.short}</strong>{' — '}{correctSide.detail}</p>
-              {correctSide.note ? <p className="wg-reveal-note">{correctSide.note}</p> : null}
-            </div>
-            <div>
-              <p className="wg-reveal-detail"><strong>{otherSide.short}</strong>{' — '}{otherSide.detail}</p>
-              {otherSide.note ? <p className="wg-reveal-note">{otherSide.note}</p> : null}
-            </div>
-          </>}
-          detailsLabel="Show details"
+          answer={<div className="wg-correct-choice">
+            <p className="wg-correct-line"><strong>{correctSide.short}</strong>{' — '}{correctSide.scale}</p>
+            <p className="wg-reveal-detail"><strong>{correctSide.short}</strong>{' — '}{correctSide.detail}</p>
+            <p className="wg-reveal-detail"><strong>{otherSide.short}</strong>{' — '}{otherSide.scale} · {otherSide.detail}</p>
+          </div>}
+          details={hasNotes ? <>
+            {correctSide.note ? <p className="wg-reveal-note">{correctSide.note}</p> : null}
+            {otherSide.note ? <p className="wg-reveal-note">{otherSide.note}</p> : null}
+          </> : null}
           nextLabel={over ? 'See results' : 'Next round'}
           onNext={over ? () => setShowResults(true) : () => next()}
         />}

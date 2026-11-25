@@ -2,16 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PLAY_MODES, isGameOver, nextLives } from "../../lib/quiz-play.mjs";
-import { ArrowRightIcon } from "../components/Icons";
 import nameBank from "../../lib/name-quest/name-bank.json";
 import pokemonAnimalPairs from "../../lib/name-quest/pokemon-animal-pairs.json";
 import { NAME_QUEST_IMAGES } from "../../lib/name-quest/images.mjs";
 import { preloadImages } from "../../lib/preload-images.mjs";
-import PortalNav from "../components/PortalNav";
-import { GameBar, StatusLine } from "../components/QuizShell";
+import { GameFooter, GameResults, MinimalTopBar } from "../components/QuizShell";
+import ResultReveal from "../components/ResultReveal";
 
 const entries = nameBank;
 const animalPairs = pokemonAnimalPairs;
+
+/* Photo credits, in the game's own order: one line per entry with a
+ * credited photo. Link-only image records have no author/license, so
+ * they are excluded. */
+const CREDITS = entries
+  .filter((entry) => NAME_QUEST_IMAGES[entry.id]?.thumb && NAME_QUEST_IMAGES[entry.id].author)
+  .map((entry) => ({ id: entry.id, name: entry.name, ...NAME_QUEST_IMAGES[entry.id] }));
 
 const categories = [
   "Pokemon",
@@ -488,13 +494,42 @@ export default function Game() {
     resetGame();
   };
 
+  /* The answer line for the reveal: the entry's true category, reacting
+   * to the player's choice — never the question, never a bare label. */
+  const revealCategoryLine =
+    mode === "realAnimal"
+      ? "the " + pairCurrent.target
+      : mode === "pokemon"
+        ? current.category === "Pokemon"
+          ? "a Pokemon"
+          : "not a Pokemon — it is " + current.category
+        : (/^[aeiou]/i.test(current.category) ? "an " : "a ") + current.category;
+  /* Reveal media, moved off the board into the overlay: the same embedded
+   * photo when one exists, otherwise the same discreet link. */
+  const revealMediaElement = revealImage ? (
+    <figure className="nq-reveal-image">
+      <img src={revealImage.thumb} alt={revealEntry.name} loading="eager" fetchpriority="high" decoding="async" onError={(event) => { const figure = event.currentTarget.closest("figure"); if (figure) figure.style.display = "none"; }} />
+      <figcaption>Photo: {revealImage.author}, {revealImage.license}, via <a href={revealImage.page} target="_blank" rel="noreferrer">Wikimedia Commons</a></figcaption>
+    </figure>
+  ) : revealLink ? (
+    <a className="nq-reveal-link" href={revealLink} target="_blank" rel="noreferrer">See what {revealEntry.name} looks like ↗</a>
+  ) : null;
+  /* Verdict wash (Kahoot pattern): floods the page on reveal, clears on
+   * the results screen. A close answer counts as correct. */
+  const wash = result !== "idle" && !(over && showResults) ? (result === "miss" ? "is-wrong" : "is-correct") : "";
+
   return (
-    <>
-      <PortalNav />
-      <GameBar title="Name Quest" onStartOver={() => resetGame()} settingsSummary={(PLAY_MODES.find((play) => play.id === playMode) || {}).label}>
+    <main className={"name-quest-page qs-game" + (wash ? " " + wash : "")}>
+      <MinimalTopBar
+        settingsSummary={modeLabels[mode] + " · " + (PLAY_MODES.find((play) => play.id === playMode) || {}).label}
+        onStartOver={() => resetGame()}
+        score={score}
+        lives={lives}
+        showLives={playMode === "lives"}
+      >
         <div className="qs-menu-group">
           <span className="qs-menu-label">Game mode</span>
-          <div className="pf-pill-group" role="group" aria-label="Game modes">
+          <div className="pf-pill-group" role="group" aria-label="Game mode">
             {Object.keys(modeLabels).map((nextMode) => (
               <button key={nextMode} type="button" className="pf-pill" aria-label={modeLabels[nextMode]} aria-pressed={nextMode === mode} onClick={() => resetGame(level, nextMode)}>
                 {modeLabels[nextMode]}
@@ -505,7 +540,7 @@ export default function Game() {
         {mode === "category" && (
           <div className="qs-menu-group">
             <span className="qs-menu-label">Level</span>
-            <div className="pf-pill-group" role="group" aria-label="Choose challenge level">
+            <div className="pf-pill-group" role="group" aria-label="Level">
               {Object.keys(levelLabels).map((nextLevel) => (
                 <button key={nextLevel} type="button" className="pf-pill" aria-pressed={nextLevel === level} onClick={() => resetGame(nextLevel, mode)}>{levelLabels[nextLevel]}</button>
               ))}
@@ -520,47 +555,45 @@ export default function Game() {
             ))}
           </div>
         </div>
-      </GameBar>
+      </MinimalTopBar>
 
-      <main className="name-quest-page">
-        <StatusLine round={rounds + 1} total={playMode === "ten" ? 10 : null} correct={score} played={rounds + (result !== "idle" ? 1 : 0)} streak={streak} lives={playMode === "lives" ? lives : null} />
-        {over && showResults ? (
-          <section className="name-quest-board" aria-label="Name Quest results">
-            <div className="name-card-stage">
-              <p>{playMode === "ten" ? "10 rounds done!" : "Out of lives!"}</p>
-              <h2 className="quest-name">Here is how you did.</h2>
-              <strong className="round-feedback">{score} correct out of {rounds + 1} answered.</strong>
-              <button type="button" className="pf-primary" onClick={() => resetGame()}>Play again <ArrowRightIcon /></button>
-            </div>
-          </section>
-        ) : (
+      {over && showResults ? (
+        <GameResults
+          kicker={playMode === "ten" ? "10 rounds done!" : "Out of lives!"}
+          correct={score}
+          played={rounds + 1}
+          onPlayAgain={() => resetGame()}
+        />
+      ) : (
         <section className="name-quest-board" aria-label="Name Quest round">
-          <p className="quest-prompt">{mode === "pokemon" ? "Pokemon or not?" : mode === "realAnimal" ? "Which one is it?" : "What kind of name is this?"}</p>
+          <p className="qs-round">Round {rounds + 1}{playMode === "ten" ? " of 10" : ""}</p>
+          <h1 className="qs-question">{mode === "pokemon" ? "Pokemon or not?" : mode === "realAnimal" ? "Which one is it?" : "What kind of name is this?"}</h1>
           <div className="name-card-stage">
             <h2 className="quest-name">{promptName}</h2>
             <strong className={"round-feedback " + result} aria-live="polite">{feedback}</strong>
-            {revealImage ? (
-              <figure className="nq-reveal-image">
-                <img src={revealImage.thumb} alt={revealEntry.name} loading="eager" fetchpriority="high" decoding="async" onError={(event) => { const figure = event.currentTarget.closest("figure"); if (figure) figure.style.display = "none"; }} />
-                <figcaption>Photo: {revealImage.author}, {revealImage.license}, via <a href={revealImage.page} target="_blank" rel="noreferrer">Wikimedia Commons</a></figcaption>
-              </figure>
-            ) : revealLink ? (
-              <a className="nq-reveal-link" href={revealLink} target="_blank" rel="noreferrer">See what {revealEntry.name} looks like ↗</a>
-            ) : null}
-            {result !== "idle" ? (
-              <button type="button" className="pf-primary" onClick={over ? () => setShowResults(true) : nextRound}>{over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}</button>
-            ) : null}
           </div>
 
           <div className="choice-grid">
             {choices.map((choice) => (
-              <button key={choice} type="button" disabled={result !== "idle"} onClick={() => judgeAnswer(choice)}>{choice}</button>
+              <button key={choice} type="button" className="qs-choice" disabled={result !== "idle"} onClick={() => judgeAnswer(choice)}>{choice}</button>
             ))}
           </div>
+          {result !== "idle" && (
+            <ResultReveal
+              verdict={result === "correct" ? "correct" : result === "close" ? "close" : "wrong"}
+              title={result === "correct" ? "Correct" : result === "close" ? "So close" : "Incorrect"}
+              answer={<p><strong>{revealEntry.name}</strong> is {revealCategoryLine}.</p>}
+              media={revealMediaElement}
+              brief={<p>{feedback}</p>}
+              details={null}
+              nextLabel={over ? "See results" : "Next round"}
+              onNext={over ? () => setShowResults(true) : nextRound}
+            />
+          )}
         </section>
-        )}
+      )}
 
-      </main>
-    </>
+      <GameFooter poolLabel={entries.length + " names"} credits={CREDITS} />
+    </main>
   );
 }
