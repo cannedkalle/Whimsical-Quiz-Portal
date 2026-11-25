@@ -35,6 +35,17 @@ h1,h2,h3,p{margin:0}h1{font-size:clamp(30px,4vw,44px);letter-spacing:-1.2px}h2{f
 .install-help-close{justify-self:start;background:var(--pf-green, #276044);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
 
 @media(max-width:600px){main.name-quest-page{padding:16px 16px 40px}}
+/* Short screens (2026-11-25): Name Quest was the one quiz whose
+ * choices ran past a 390x667 viewport (last choice bottom 746px).
+ * The shared frame tightening in quiz-shell.css covers the frame;
+ * this game-specific rule shrinks the one tall block only Name
+ * Quest has — the name stage — plus the board gaps, so all four
+ * choices fit at 667px. Nothing changes at taller heights. */
+@media (max-height:740px) and (max-width:600px){
+  .name-quest-page{gap:16px}
+  .name-quest-board{gap:12px}
+  .name-card-stage{min-height:180px;padding:16px}
+}
 
 .nq-reveal-image{margin:4px 0 0;max-width:520px;width:100%}
 .nq-reveal-image img{display:block;width:100%;max-height:320px;object-fit:cover;border-radius:12px;background:var(--pf-surface)}

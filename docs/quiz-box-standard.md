@@ -149,11 +149,11 @@ fit rule on phones.
 - Animal Outsider: image+text, option × 4 in the 4+ protocol
   (height-capped bands desktop, square-thumbnail rows on phones).
   Its cards persist at reveal with only a status change, so it
-  already satisfies the minimal-change rule. One micro-fix open:
-  photo radius 16px → 12px.
+  already satisfies the minimal-change rule. Photo radius is 12px
+  (micro-fix done 2026-11-25: was 16px).
 - Twin Terms: text-only options (categories, and four specific
   answers on give-up); image+text single answer box (band, 12px
-  radius, but a max-height cap instead of a fixed 16/10 ratio —
-  micro-fix open).
+  radius, fixed 16/10 ratio — micro-fix done 2026-11-25: was a
+  max-height cap).
 - Name Quest: text-only options; no image boxes yet — its image
   phase (reveal only) comes after Balls.

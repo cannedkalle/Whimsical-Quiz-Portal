@@ -127,6 +127,24 @@
 .qs-choice:hover:not(:disabled){transform:translateY(-3px);border-color:var(--pf-green);background:var(--pf-leaf-soft)}
 .qs-choice:active:not(:disabled){transform:translateY(0) scale(.98)}
 .qs-choice:focus-visible{outline:2px solid var(--pf-focus);outline-offset:2px}
+/* Shared photo loading treatment (2026-11-25): every quiz photo sits
+ * on the same soft tint while it loads, so a slow photo shows a
+ * reserved tinted space instead of flashing an empty white box and
+ * shifting the layout when it arrives. One shared rule for every
+ * quiz — the tint is the existing --pf-leaf-soft token, no new
+ * colour. Each game's own rules already reserve the space (Balls'
+ * 16/10 band, Bulb's .object-art aspect, Outsider's fixed photo
+ * height, Twin's 16/10 reveal band); the one band that reserved
+ * nothing, Name Quest's reveal image, gains the 16/10 aspect here.
+ * Where a photo fails to load the game's existing onError still
+ * hides the figure/img and the box works with text alone — this
+ * rule only paints the space while the photo is on its way. */
+.qs-game .wg-choice-photo,
+.before-the-bulb .object-art,
+.qs-game .animal-photo,
+.qs-game .th-reveal-image img,
+.qs-game .nq-reveal-image img{background:var(--pf-leaf-soft)}
+.qs-game .nq-reveal-image img{aspect-ratio:16 / 10}
 /* Verdict wash (Kahoot pattern): the page floods with the verdict
  * colour the instant a choice marks itself. The game puts
  * `is-correct` / `is-wrong` on its `qs-game` main; the wash clears on
@@ -172,6 +190,19 @@
 .qs-credits ul{list-style:none;padding:0;margin:8px 0 0}
 .qs-credits li{margin-bottom:6px;line-height:1.5}
 .qs-credits a{font-weight:700}
+/* Short screens (2026-11-25): on a short phone (e.g. 390x667) the
+ * shared frame tightens its own spacing — top row, round label, and
+ * question — so the question plus all choices stay visible without
+ * scrolling at 667px as they already are at 844px. One shared query
+ * for every quiz; a game whose own content still overflows adds a
+ * minimal short-screen rule in its own sheet (Name Quest's stage,
+ * in globals.css). Measured per game in docs/quiz-ui-standard.md. */
+@media (max-height:740px) and (max-width:600px){
+  .qs-top{margin-bottom:0;min-height:40px}
+  .qs-round{margin:2px 0 4px}
+  .qs-question{font-size:24px;margin:4px 0 10px}
+  .qs-footer{margin-top:20px}
+}
 
 @media(max-width:600px){
   .qs-footer{font-size:11px;margin-top:25px;flex-wrap:wrap}

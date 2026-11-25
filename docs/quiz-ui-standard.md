@@ -19,8 +19,8 @@ formalized, and its section at the end records current behavior only.
 With the settings menu collapsed, the whole quiz — question plus all
 choices — is visible without scrolling on a 390×844 phone. That is the
 fit rule, and it outranks any single element's size: if a game's content
-cannot fit under it, the content shrinks (see the open decision on Bulb
-art below); the frame does not grow.
+cannot fit under it, the content shrinks (see the resolved Bulb
+art note under Open decisions below); the frame does not grow.
 
 1. **Top row: `MinimalTopBar`.** One row: ✕ back to all games, the
    shell's own settings dropdown, and a ✓ score (lives appended in
@@ -158,10 +158,22 @@ Spin Draw.
 
 ### Open decisions (mobile)
 
-- Bulb's stacked 16/10 card art fits the fit rule at 844px and taller
-  (including a Pro Max) but not at 667–740px. Options: cap mobile art
-  height (around 150px, still cropped) or accept scrolling on smaller
-  phones. Decision open; the card design is unchanged until it is made.
+- Bulb art on small phones — RESOLVED (2026-11-25). The cap was
+  taken: at ≤600px wide, Bulb's banner art is capped at 150px
+  (`.object-art:has(img) { height: 150px }`), as is Balls' choice
+  photo. Fit was then measured at 390×667 as well as 390×844
+  (settings menu collapsed, last choice's bottom edge vs the
+  viewport): at 667px every game's choices are fully visible —
+  Balls 549px, Bulb 604px, Twin Terms 503px, Animal Outsider
+  534px, Name Quest 634px. Name Quest was the only overflow
+  (746px before the fix); it now fits via the shared short-screen
+  tightening in `quiz-shell.css` (`max-height: 740px` query:
+  top row, round label, question) plus a minimal game-specific
+  rule shrinking its name stage in `globals.css`. Page furniture
+  below the choices (footer, credits, Outsider's learning panel)
+  may still sit below the fold at 667px — the fit rule covers
+  the question plus all choices, which now hold at both heights
+  for all five games.
 
 ### Adoption
 
