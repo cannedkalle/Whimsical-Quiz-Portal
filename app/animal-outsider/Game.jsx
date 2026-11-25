@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GameFooter, GameResults, MinimalTopBar } from '../components/QuizShell';
+import { GameFooter, GameResults, MinimalTopBar, ResumeNotice } from '../components/QuizShell';
+import { clearResume, loadResume, resumeHasProgress, resumeNumber, saveResume } from '../../lib/resume.mjs';
 import ResultReveal from '../components/ResultReveal';
 import { animals } from '../../lib/animal-outsider/animals.mjs';
 import { ANIMAL_OUTSIDER_IMAGES } from '../../lib/animal-outsider/images.mjs';
@@ -10,6 +11,7 @@ import { rootWords, taxonInfo } from '../../lib/animal-outsider/taxa.mjs';
 import { getAnimalPool } from '../../lib/animal-outsider/difficulty.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import {
+  buildCandidateRound,
   describeTaxon,
   examplesForTaxon,
   findParallelBranch,
@@ -27,6 +29,56 @@ import {
 
 const byId = new Map(animals.map((animal) => [animal.id, animal]));
 const maxRecentRounds = 18;
+
+const SAVE_KEY = 'animal-outsider-save-v1';
+
+/* Validate a saved game against the live catalog (the shared resume
+ * pattern, lib/resume.mjs): settings and counters must be sane, and
+ * the saved round's three animals must still form a valid round in
+ * the saved difficulty's pool — the round is rebuilt from its animal
+ * ids, keeping the dealt order. Only unanswered rounds are saved: an
+ * answered round saves the next round it dealt, so a reload
+ * mid-reveal lands on that next round. Anything off returns null and
+ * the game starts fresh. */
+function validateSave(saved) {
+  if (!['easy', 'standard'].includes(saved.difficulty)) return null;
+  if (!PLAY_MODES.some((mode) => mode.id === saved.playMode)) return null;
+  const roundNo = resumeNumber(saved.roundNo, { min: 1 });
+  const answered = resumeNumber(saved.answered);
+  const correct = resumeNumber(saved.correct);
+  const lives = resumeNumber(saved.lives, { max: 3 });
+  const streak = resumeNumber(saved.streak);
+  if ([roundNo, answered, correct, lives, streak].some((value) => value === null)) return null;
+  if (correct > answered || streak > answered) return null;
+  if (!Array.isArray(saved.choiceIds) || saved.choiceIds.length !== 3) return null;
+  if (new Set(saved.choiceIds).size !== 3) return null;
+  const poolIds = new Set(getAnimalPool(animals, saved.difficulty).map((animal) => animal.id));
+  const choiceAnimals = saved.choiceIds.map((id) => byId.get(id));
+  if (choiceAnimals.some((animal) => !animal || !poolIds.has(animal.id))) return null;
+  const round = buildCandidateRound(choiceAnimals);
+  if (!round) return null;
+  round.choices = choiceAnimals;
+  return {
+    difficulty: saved.difficulty,
+    playMode: saved.playMode,
+    roundNo,
+    answered,
+    correct,
+    lives,
+    streak,
+    round,
+    recentKeys: Array.isArray(saved.recentKeys)
+      ? saved.recentKeys.filter((key) => typeof key === 'string')
+      : [],
+    discoveredAnimals: Array.isArray(saved.discoveredAnimals)
+      ? saved.discoveredAnimals.filter((id) => byId.has(id))
+      : [],
+    discoveredTaxa: Array.isArray(saved.discoveredTaxa)
+      ? saved.discoveredTaxa.filter((name) => taxonInfo[name])
+      : [],
+    explorerId: byId.has(saved.explorerId) ? saved.explorerId : null,
+  };
+}
 
 /* Photo credits, in the game's own order: one line per animal that can
  * appear, from the same images data the cards use. */
@@ -136,6 +188,9 @@ export default function Game() {
   const [discoveredAnimals, setDiscoveredAnimals] = useState([]);
   const [discoveredTaxa, setDiscoveredTaxa] = useState([]);
   const [explorerId, setExplorerId] = useState(null);
+  /* True when this page load restored a saved game with progress; the
+   * shell's resume notice shows until the player answers or moves on. */
+  const [resumed, setResumed] = useState(false);
   const recentKeys = useRef([]);
   const gridRef = useRef(null);
   const focusFirstCard = useRef(false);
@@ -147,11 +202,49 @@ export default function Game() {
   const explorerOptions = [...pool].sort((a, b) => a.commonName.localeCompare(b.commonName));
   const knownTaxa = discoveredTaxa.filter((name) => taxonInfo[name]).slice(-8).reverse();
 
+  /* Save the game around a round (always the unanswered round on
+   * screen next), with any state the caller already computed; the
+   * rest falls back to the current state values. */
+  const saveState = (values) => {
+    saveResume(SAVE_KEY, {
+      difficulty: values.difficulty ?? difficulty,
+      playMode: values.playMode ?? playMode,
+      lives: values.lives ?? lives,
+      streak: values.streak ?? streak,
+      roundNo: values.roundNo ?? roundNo,
+      answered: values.answered ?? answered,
+      correct: values.correct ?? correct,
+      choiceIds: values.round.choices.map((animal) => animal.id),
+      recentKeys: recentKeys.current,
+      discoveredAnimals: values.discoveredAnimals ?? discoveredAnimals,
+      discoveredTaxa: values.discoveredTaxa ?? discoveredTaxa,
+      explorerId: 'explorerId' in values ? values.explorerId : explorerId,
+    });
+  };
+
   useEffect(() => {
+    const saved = loadResume(SAVE_KEY, validateSave);
+    if (saved) {
+      recentKeys.current = saved.recentKeys.length ? saved.recentKeys : [roundKey(saved.round)];
+      setDifficulty(saved.difficulty);
+      setPlayMode(saved.playMode);
+      setLives(saved.lives);
+      setStreak(saved.streak);
+      setRoundNo(saved.roundNo);
+      setAnswered(saved.answered);
+      setCorrect(saved.correct);
+      setCurrent(saved.round);
+      setDiscoveredAnimals(saved.discoveredAnimals);
+      setDiscoveredTaxa(saved.discoveredTaxa);
+      setExplorerId(saved.explorerId);
+      setResumed(resumeHasProgress({ rounds: saved.answered, score: saved.correct }));
+      return;
+    }
     const round = generateRound(getAnimalPool(animals, 'easy'), []);
     recentKeys.current = [roundKey(round)];
     setCurrent(round);
     setRoundNo(1);
+    saveState({ round, difficulty: 'easy', playMode: 'endless', lives: 3, streak: 0, roundNo: 1, answered: 0, correct: 0, discoveredAnimals: [], discoveredTaxa: [], explorerId: null });
   }, []);
 
   useEffect(() => {
@@ -175,6 +268,7 @@ export default function Game() {
     setSelectedId(null);
     setRoundNo((n) => n + 1);
     focusFirstCard.current = true;
+    saveState({ round, roundNo: roundNo + 1 });
   };
 
   /* Fresh game in the current difficulty. Start over and play-mode switches
@@ -196,6 +290,9 @@ export default function Game() {
     setLives(3);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
+    clearResume(SAVE_KEY);
+    saveState({ round, playMode: nextPlayMode, roundNo: 1, answered: 0, correct: 0, streak: 0, lives: 3, discoveredAnimals: [], discoveredTaxa: [], explorerId: null });
   };
 
   const switchPlayMode = (next) => {
@@ -222,26 +319,40 @@ export default function Game() {
     setLives(3);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
+    clearResume(SAVE_KEY);
+    saveState({ round, difficulty: next, roundNo: 1, answered: 0, correct: 0, streak: 0, lives: 3, discoveredAnimals: [], discoveredTaxa: [], explorerId: null });
   };
 
   const answer = (animalId) => {
     if (!current || selectedId) return;
+    setResumed(false);
     const correctChoice = animalId === current.outsider.id;
+    const nextLivesCount = nextLives(playMode, lives, correctChoice);
+    const nextStreak = correctChoice ? streak + 1 : 0;
+    const nextDiscoveredAnimals = addUnique(discoveredAnimals, current.choices.map((animal) => animal.id));
+    const nextDiscoveredTaxa = addUnique(discoveredTaxa, current.choices.flatMap((animal) => animal.clades));
     setSelectedId(animalId);
     setAnswered((n) => n + 1);
     setCorrect((n) => n + (correctChoice ? 1 : 0));
-    setStreak((n) => (correctChoice ? n + 1 : 0));
-    setLives(nextLives(playMode, lives, correctChoice));
-    const gameOver = isGameOver(playMode, answered + 1, nextLives(playMode, lives, correctChoice));
+    setStreak(nextStreak);
+    setLives(nextLivesCount);
+    const gameOver = isGameOver(playMode, answered + 1, nextLivesCount);
     setOver(gameOver);
-    setDiscoveredAnimals((prev) => addUnique(prev, current.choices.map((animal) => animal.id)));
-    setDiscoveredTaxa((prev) => addUnique(prev, current.choices.flatMap((animal) => animal.clades)));
+    setDiscoveredAnimals(nextDiscoveredAnimals);
+    setDiscoveredTaxa(nextDiscoveredTaxa);
     setExplorerId(current.outsider.id);
     if (!gameOver) {
-      /* Deal the next round now and warm its photos, so advancing is instant. */
+      /* Deal the next round now and warm its photos, so advancing is instant.
+       * The save moves to that next round: a reload mid-reveal lands on
+       * it, unanswered, with this round's score already counted. */
       const upNext = dealRound(getAnimalPool(animals, difficulty), recentKeys.current);
       setQueuedRound(upNext);
       preloadImages(upNext.choices.map((animal) => ANIMAL_OUTSIDER_IMAGES[animal.id]?.thumb));
+      saveState({ round: upNext, roundNo: roundNo + 1, answered: answered + 1, correct: correct + (correctChoice ? 1 : 0), lives: nextLivesCount, streak: nextStreak, discoveredAnimals: nextDiscoveredAnimals, discoveredTaxa: nextDiscoveredTaxa, explorerId: current.outsider.id });
+    } else {
+      /* A finished game is cleared, never restored. */
+      clearResume(SAVE_KEY);
     }
   };
 
@@ -381,6 +492,7 @@ export default function Game() {
           </div>
         </MinimalTopBar>
 
+        {resumed && <ResumeNotice />}
         {over && showResults ? (
           <GameResults
             kicker={playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}

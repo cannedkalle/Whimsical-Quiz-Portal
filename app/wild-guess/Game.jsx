@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { buildReveal, clearProgress, generateComparison, loadProgress, saveProgress } from '../../lib/wild-guess/client-game.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
+import { resumeHasProgress } from '../../lib/resume.mjs';
 import { WILD_GUESS_IMAGES } from '../../lib/wild-guess/images.mjs';
 import { subjects } from '../../lib/wild-guess/subjects.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
-import { GameFooter, GameResults, MinimalTopBar } from '../components/QuizShell';
+import { GameFooter, GameResults, MinimalTopBar, ResumeNotice } from '../components/QuizShell';
 import ResultReveal from '../components/ResultReveal';
 
 /* Balls in the Ballpark, played entirely in the browser: matchups are dealt
@@ -46,6 +47,9 @@ export default function Game() {
   const [streak, setStreak] = useState(0);
   const [over, setOver] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  /* True when this page load restored a saved game with progress; the
+   * shell's resume notice shows until the player answers or moves on. */
+  const [resumed, setResumed] = useState(false);
   /* Category filter: 'mixed' deals from all categories (the default),
    * otherwise only that category. */
   const [category, setCategory] = useState('mixed');
@@ -89,8 +93,9 @@ export default function Game() {
   /* Start over resets first and deals second, so a failed deal can never
    * leave the player stuck on a stale round: the score, round and error
    * are cleared unconditionally, and only then is a fresh matchup dealt. */
-  const startFresh = (categoryOverride) => {
+  const startFresh = (categoryOverride, modeOverride) => {
     clearProgress();
+    setResumed(false);
     setComparison(null);
     setPosition(0);
     setPlayed(0);
@@ -108,7 +113,7 @@ export default function Game() {
       return;
     }
     setComparison(next);
-    saveProgress({ leftId: next.left.id, rightId: next.right.id, category: next.category, position: 0, played: 0, correct: 0 });
+    saveProgress({ leftId: next.left.id, rightId: next.right.id, category: next.category, position: 0, played: 0, correct: 0, playMode: modeOverride ?? playMode, lives: 3, streak: 0, filter: typeof categoryOverride === 'string' ? categoryOverride : category, recent: historyRef.current });
   };
 
   /* Switching play mode resets the score, so one mode's results never mix
@@ -116,7 +121,7 @@ export default function Game() {
   const switchPlayMode = (nextMode) => {
     if (nextMode === playMode) return;
     setPlayMode(nextMode);
-    startFresh();
+    startFresh(undefined, nextMode);
   };
 
   /* Switching category resets the score, same as switching play mode. */
@@ -129,10 +134,16 @@ export default function Game() {
   useEffect(() => {
     const saved = loadProgress();
     if (saved) {
+      historyRef.current = saved.recent;
       setComparison(saved.comparison);
       setPosition(saved.position);
       setPlayed(saved.played);
       setCorrect(saved.correct);
+      setPlayMode(saved.playMode);
+      setLives(saved.lives);
+      setStreak(saved.streak);
+      setCategory(saved.categoryFilter);
+      setResumed(resumeHasProgress({ rounds: saved.played, score: saved.correct }));
     } else {
       startFresh();
     }
@@ -144,16 +155,18 @@ export default function Game() {
 
   const choose = (choice) => {
     if (!comparison || reveal) return;
+    setResumed(false);
     const nextReveal = buildReveal(comparison, choice);
     const nextPlayed = played + 1;
     const nextCorrect = correct + (nextReveal.correct ? 1 : 0);
+    const nextStreak = nextReveal.correct ? streak + 1 : 0;
     const nextLivesCount = nextLives(playMode, lives, nextReveal.correct);
     const gameOver = isGameOver(playMode, nextPlayed, nextLivesCount);
     setReveal(nextReveal);
     setPlayed(nextPlayed);
     setCorrect(nextCorrect);
     setLives(nextLivesCount);
-    setStreak(nextReveal.correct ? streak + 1 : 0);
+    setStreak(nextStreak);
     setOver(gameOver);
     if (gameOver) {
       /* Results are ephemeral: a reload after the game ends starts fresh
@@ -169,9 +182,9 @@ export default function Game() {
     if (upNext) {
       /* The next round is dealt; warm its photos now so advancing is instant. */
       preloadImages([WILD_GUESS_IMAGES[upNext.left.id]?.thumb, WILD_GUESS_IMAGES[upNext.right.id]?.thumb]);
-      saveProgress({ leftId: upNext.left.id, rightId: upNext.right.id, category: upNext.category, position: position + 1, played: nextPlayed, correct: nextCorrect });
+      saveProgress({ leftId: upNext.left.id, rightId: upNext.right.id, category: upNext.category, position: position + 1, played: nextPlayed, correct: nextCorrect, playMode, lives: nextLivesCount, streak: nextStreak, filter: category, recent: historyRef.current });
     } else {
-      saveProgress({ leftId: comparison.left.id, rightId: comparison.right.id, category: comparison.category, position, played: nextPlayed, correct: nextCorrect });
+      saveProgress({ leftId: comparison.left.id, rightId: comparison.right.id, category: comparison.category, position, played: nextPlayed, correct: nextCorrect, playMode, lives: nextLivesCount, streak: nextStreak, filter: category, recent: historyRef.current });
     }
   };
 
@@ -195,7 +208,7 @@ export default function Game() {
     setPosition(nextPosition);
     setQueued(null);
     setError('');
-    saveProgress({ leftId: nextComparison.left.id, rightId: nextComparison.right.id, category: nextComparison.category, position: nextPosition, played, correct });
+    saveProgress({ leftId: nextComparison.left.id, rightId: nextComparison.right.id, category: nextComparison.category, position: nextPosition, played, correct, playMode, lives, streak, filter: category, recent: historyRef.current });
   };
 
   const correctSide = reveal ? reveal.sides[reveal.correctChoice] : null;
@@ -231,6 +244,7 @@ export default function Game() {
         played={played}
         onPlayAgain={startFresh}
       /> : <>
+        {resumed && <ResumeNotice />}
         <p className="qs-round">Round {round}{playMode === 'ten' ? ' of 10' : ''}</p>
         <h1 className="qs-question" ref={heading} tabIndex={-1}>{comparison.prompt}</h1>
         <div className="wg-choice-grid">{[comparison.left, comparison.right].map((option, index) => <button key={option.label} className={`qs-choice${reveal ? (index === reveal.correctChoice ? ' is-correct' : index === reveal.choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={reveal !== null} onClick={() => choose(index)}><ChoicePhoto option={option} />{reveal && index === reveal.correctChoice && <span className="qs-verdict-mark is-correct" aria-hidden="true">✓</span>}{reveal && index === reveal.choice && !reveal.correct && <span className="qs-verdict-mark is-wrong" aria-hidden="true">✗</span>}<span className="wg-choice-text"><span className="wg-option-emoji" aria-hidden="true">{option.emoji}</span><strong>{option.label}</strong></span></button>)}</div>

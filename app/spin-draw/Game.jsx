@@ -844,9 +844,9 @@ export default function Game() {
     <div className="spin-draw-page">
       <PortalNav />
       <main className="spin-draw">
-        <header className="qs-bar">
-          <h1 className="qs-bar-title">Spin Draw</h1>
-          <div className="qs-bar-actions">
+        <header className="sd-bar">
+          <h1 className="sd-bar-title">Spin Draw</h1>
+          <div className="sd-bar-actions">
             <div className="sd-pills sd-modes" role="group" aria-label="Mode">
               {[
                 ['draw', 'Draw'],
@@ -894,7 +894,7 @@ export default function Game() {
             </div>
           </div>
         </header>
-        <p className="qs-status">{status}</p>
+        <p className="sd-status">{status}</p>
         <div className="sd-palette" role="group" aria-label="Drawing colors">
             {PALETTE.map((c, i) => (
               <button

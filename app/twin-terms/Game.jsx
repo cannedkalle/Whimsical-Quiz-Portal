@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { GameFooter, GameResults, MinimalTopBar } from "../components/QuizShell";
+import { GameFooter, GameResults, MinimalTopBar, ResumeNotice } from "../components/QuizShell";
+import { resumeHasProgress } from '../../lib/resume.mjs';
 import ResultReveal from '../components/ResultReveal';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import { DOMAINS } from '../../lib/twin-terms/domains.mjs';
@@ -46,6 +47,9 @@ export default function Game() {
   const [lives, setLives] = useState(3);
   const [over, setOver] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  /* True when this page load restored a saved game with progress; the
+   * shell's resume notice shows until the player answers or moves on. */
+  const [resumed, setResumed] = useState(false);
   const heading = useRef(null);
   const historyRef = useRef([]);
   /* Deal through the generator, avoiding the last 12 pairs so the same
@@ -74,6 +78,7 @@ export default function Game() {
   const startFresh = (mode = playMode) => {
     const fresh = deal();
     clearProgress();
+    setResumed(false);
     resetRound(fresh);
     setPlayed(0);
     setCorrect(0);
@@ -105,6 +110,7 @@ export default function Game() {
       setCorrect(saved.correct);
       setStreak(saved.streak);
       setLives(saved.lives);
+      setResumed(resumeHasProgress({ rounds: saved.played, score: saved.correct }));
     } else {
       startFresh();
     }
@@ -112,6 +118,7 @@ export default function Game() {
 
   const chooseCategory = (categoryId) => {
     if (!pair || pickedCategory || gaveUp) return;
+    setResumed(false);
     const isRight = categoryId === pair.category;
     const nextPlayed = played + 1;
     const nextCorrect = correct + (isRight ? 1 : 0);
@@ -140,6 +147,7 @@ export default function Game() {
 
   const giveUp = () => {
     if (!pair || pickedCategory || gaveUp) return;
+    setResumed(false);
     const revealed = dealOptions(pair);
     const nextPlayed = played + 1;
     const nextLivesCount = nextLives(playMode, lives, false);
@@ -207,6 +215,7 @@ export default function Game() {
         played={played}
         onPlayAgain={() => startFresh()}
       /> : <>
+        {resumed && <ResumeNotice />}
         <p className="qs-round">Round {round}{playMode === 'ten' ? ' of 10' : ''}</p>
         <h1 className="qs-question" ref={heading} tabIndex={-1}>{gaveUp ? 'The specific answers — pick one to see the reveal.' : 'Both words come from the same field. Pick its category.'}</h1>
         <div className="th-hints" aria-label={`Hints: ${pair.hints[0]} and ${pair.hints[1]}`}>

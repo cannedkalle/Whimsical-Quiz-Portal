@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ResultReveal from '../components/ResultReveal';
-import { GameFooter, GameResults, MinimalTopBar } from '../components/QuizShell';
+import { GameFooter, GameResults, MinimalTopBar, ResumeNotice } from '../components/QuizShell';
+import { clearResume, loadResume, resumeHasProgress, resumeNumber, saveResume } from '../../lib/resume.mjs';
 import { createGame } from '../../lib/before-the-bulb/game.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
 import {
@@ -16,8 +17,9 @@ import { BULB_IMAGES } from '../../lib/before-the-bulb/images.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
 
 /* Same modes, titles, descriptions, labels, and pool copy as the standalone
- * game. The game keeps no saved progress (the standalone did not either):
- * reloading starts a fresh score, by design. */
+ * game. Progress now follows the shared resume pattern (lib/resume.mjs):
+ * the in-progress game is saved on every deal, so a reload picks it up
+ * where it left off; a finished game is cleared, never restored. */
 const MODES = {
   curated: {
     pairs,
@@ -32,6 +34,41 @@ const MODES = {
     poolLabel: `${objects.length} inventions`,
   },
 };
+
+const SAVE_KEY = 'before-the-bulb-save-v1';
+
+/* Validate a saved game against the live pools: the pool and play mode
+ * must still exist, the pair must be in the pool, and the counters
+ * must be sane. The engine re-validates the pair and its choices on
+ * restore; anything off returns null and the game starts fresh. Only
+ * unanswered rounds are ever saved — an answered round saves the next
+ * round it dealt, so a reload mid-reveal lands on that next round. */
+function validateSave(saved) {
+  if (!MODES[saved.mode]) return null;
+  if (!PLAY_MODES.some((play) => play.id === saved.playMode)) return null;
+  if (!MODES[saved.mode].pairs.some((pair) => pair.id === saved.pairId)) return null;
+  const correct = resumeNumber(saved.correct);
+  const answered = resumeNumber(saved.answered);
+  const lives = resumeNumber(saved.lives, { max: 3 });
+  const streak = resumeNumber(saved.streak);
+  if (correct === null || answered === null || lives === null || streak === null) return null;
+  if (correct > answered) return null;
+  const poolIds = new Set(MODES[saved.mode].pairs.map((pair) => pair.id));
+  const recent = Array.isArray(saved.recent)
+    ? saved.recent.filter((id) => poolIds.has(id))
+    : [];
+  return {
+    mode: saved.mode,
+    playMode: saved.playMode,
+    lives,
+    streak,
+    pairId: saved.pairId,
+    choices: saved.choices,
+    correct,
+    answered,
+    recent,
+  };
+}
 
 /* Photo credits, in the game's own order: one line per invention that can
  * appear, from the same images data the cards use. */
@@ -63,6 +100,9 @@ export default function Game() {
   const [snap, setSnap] = useState(null);
   const [queuedSnap, setQueuedSnap] = useState(null);
   const [defOpen, setDefOpen] = useState({});
+  /* True when this page load restored a saved game with progress; the
+   * shell's resume notice shows until the player answers or moves on. */
+  const [resumed, setResumed] = useState(false);
   const startedRef = useRef(false);
   /* Session no-repeat window, shared by both pools: the last 12 dealt
    * pair ids, kept for the whole page session across mode switches,
@@ -76,13 +116,47 @@ export default function Game() {
     return snap;
   };
   const dealNext = (gameObj) => track(gameObj.next(recentRef.current));
+  /* Save the round now on screen (always unanswered) with the game
+   * state around it, so a reload restores exactly this round. */
+  const saveSnap = (snapToSave, settings) => {
+    if (!snapToSave || !snapToSave.pair) return;
+    saveResume(SAVE_KEY, {
+      mode: settings.mode,
+      playMode: settings.playMode,
+      lives: settings.lives,
+      streak: settings.streak,
+      pairId: snapToSave.pair.id,
+      choices: snapToSave.choices,
+      correct: snapToSave.correct,
+      answered: snapToSave.answered,
+      recent: recentRef.current,
+    });
+  };
   const focusRequest = useRef(null);
   const questionRef = useRef(null);
 
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    setSnap(dealNext(game));
+    const saved = loadResume(SAVE_KEY, validateSave);
+    if (saved) {
+      const restoredGame = createGame(MODES[saved.mode].pairs);
+      const restoredSnap = restoredGame.restore(saved);
+      if (restoredSnap) {
+        recentRef.current = saved.recent;
+        setGame(restoredGame);
+        setMode(saved.mode);
+        setPlayMode(saved.playMode);
+        setLives(saved.lives);
+        setStreak(saved.streak);
+        setSnap(track(restoredSnap));
+        setResumed(resumeHasProgress({ rounds: saved.answered, score: saved.correct }));
+        return;
+      }
+    }
+    const first = dealNext(game);
+    setSnap(first);
+    saveSnap(first, { mode, playMode, lives, streak });
   }, []);
 
   useEffect(() => {
@@ -103,10 +177,13 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
     startedRef.current = true;
     focusRequest.current = 'question';
     setQueuedSnap(null);
-    setSnap(dealNext(nextGame));
+    const first = dealNext(nextGame);
+    setSnap(first);
+    saveSnap(first, { mode: nextMode, playMode, lives: 3, streak: 0 });
   };
 
   /* Switching play mode starts a fresh game in the same pool, so one
@@ -121,28 +198,39 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
     startedRef.current = true;
     focusRequest.current = 'question';
     setQueuedSnap(null);
-    setSnap(dealNext(nextGame));
+    const first = dealNext(nextGame);
+    setSnap(first);
+    saveSnap(first, { mode, playMode: nextPlayMode, lives: 3, streak: 0 });
   };
 
   const handleAnswer = (id) => {
     const result = game.answer(id);
     if (!result) return;
+    setResumed(false);
     setDefOpen({});
     setSnap(result);
     const wasCorrect = result.selected === result.pair.earlierObjectId;
     const nextLivesCount = nextLives(playMode, lives, wasCorrect);
+    const nextStreak = wasCorrect ? streak + 1 : 0;
     setLives(nextLivesCount);
-    setStreak(wasCorrect ? streak + 1 : 0);
+    setStreak(nextStreak);
     const gameOver = isGameOver(playMode, result.answered, nextLivesCount);
     setOver(gameOver);
     if (!gameOver) {
-      /* Deal the next round now and warm its photos, so advancing is instant. */
+      /* Deal the next round now and warm its photos, so advancing is instant.
+       * The save moves to that next round: a reload mid-reveal lands on
+       * it, unanswered, with this round's score already counted. */
       const upNext = dealNext(game);
       setQueuedSnap(upNext);
       preloadImages([BULB_IMAGES[upNext.pair.objectAId]?.thumb, BULB_IMAGES[upNext.pair.objectBId]?.thumb]);
+      saveSnap(upNext, { mode, playMode, lives: nextLivesCount, streak: nextStreak });
+    } else {
+      /* A finished game is cleared, never restored. */
+      clearResume(SAVE_KEY);
     }
   };
 
@@ -153,8 +241,10 @@ export default function Game() {
     }
     focusRequest.current = 'question';
     setDefOpen({});
-    setSnap(queuedSnap ?? dealNext(game));
+    const nextSnap = queuedSnap ?? dealNext(game);
+    setSnap(nextSnap);
     setQueuedSnap(null);
+    saveSnap(nextSnap, { mode, playMode, lives, streak });
   };
 
   const handleRestart = () => {
@@ -164,8 +254,12 @@ export default function Game() {
     setStreak(0);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
     setQueuedSnap(null);
-    setSnap(track(game.reset(recentRef.current)));
+    const freshSnap = track(game.reset(recentRef.current));
+    setSnap(freshSnap);
+    clearResume(SAVE_KEY);
+    saveSnap(freshSnap, { mode, playMode, lives: 3, streak: 0 });
   };
 
   const activeMode = MODES[mode];
@@ -209,6 +303,7 @@ export default function Game() {
             </div>
           </div>
         </MinimalTopBar>
+        {resumed && <ResumeNotice />}
         <section className="game" aria-labelledby="question">
           {over && showResults ? (
             <GameResults

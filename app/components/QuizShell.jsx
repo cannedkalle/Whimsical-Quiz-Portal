@@ -71,6 +71,16 @@ export function MinimalTopBar({ settingsSummary, children, onStartOver, score, l
   </div>;
 }
 
+/* Resume notice: the one line a game shows when it restored an
+ * in-progress save with progress (past round 1, or a score on the
+ * board — see lib/resume.mjs). The game renders it once, on the
+ * question screen after load, when its restore carried progress;
+ * the wording is the shell's, the same in every game. It is not
+ * dismissible — Start over in the top bar is the way out. */
+export function ResumeNotice() {
+  return <p className="qs-resume-note">Picked up where you left off</p>;
+}
+
 /* End-of-game screen: kicker, heading, big score, Play again. The
  * kicker is shared wording — "10 rounds done!" in 10-question mode,
  * "Out of lives!" in lives mode — and the heading is the same in
