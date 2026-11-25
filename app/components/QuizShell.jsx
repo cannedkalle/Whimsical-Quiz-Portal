@@ -1,34 +1,46 @@
 'use client';
 
-import { ArrowRightIcon, LivesHearts, RestartIcon } from "./Icons";
+import { ArrowRightIcon } from "./Icons";
 
-/* Shared quiz shell v2: the frame every quiz game shares. Two frames
- * live here. GameBar + StatusLine is the older frame (title row,
- * dropdown, slim status line) — the three games not yet on the minimal
- * frame still use it. MinimalTopBar + GameResults + GameFooter is the
- * minimal frame (Kombai, 2026-11-19): one top row — exit, the settings
- * dropdown, the score — then the round label, the centred question,
- * the choices, and the reveal. The other games adopt it in their
- * rollout; the shell owns the frame so no game re-implements it.
+/* Shared quiz shell: the ONE frame every quiz game shares. There is a
+ * single frame — MinimalTopBar + GameResults + GameFooter — and no
+ * per-game frame. The older GameBar + StatusLine frame was deleted
+ * with the holistic unification (2026-11-23): the three games still
+ * on it (Twin Terms, Animal Outsider, Name Quest) moved to this
+ * frame in the same change, so no game re-implements the frame.
  *
- * - MinimalTopBar: the one-row top bar. The settings a game has (play
- *   mode, category, content pool) live in the dropdown, closed by
- *   default, with the current choices summarized on the toggle.
- *   Picking a setting collapses the menu again and still resets the
- *   score, exactly as a visible control row did. No kicker, no
- *   tagline, no separate picker rows. The toggle summary is
- *   "{primary setting} · {play mode}" in every game.
+ * THE CONTRACT — games fill the slots, they do not invent frame
+ * wording, order, or layout:
+ * - MinimalTopBar: the one-row top bar — exit, the settings
+ *   dropdown, the score. The settings a game has (play mode, and
+ *   its content selector: category, content pool, difficulty, game
+ *   mode, level) live in the dropdown, closed by default, with the
+ *   current choices summarized on the toggle. The toggle summary is
+ *   always "{primary content} · {play mode}" — the game's content
+ *   selector first, play mode second. A game with no content
+ *   selector summarizes play mode alone. Picking a setting collapses
+ *   the menu again and still resets the score, exactly as a visible
+ *   control row did. No kicker, no tagline, no separate picker rows.
+ *   Menu groups run content-first, then Play mode, each group a
+ *   `.qs-menu-group` with a `.qs-menu-label` naming the group and a
+ *   `.pf-pill-group` with the options; the group label and the pill
+ *   group's aria-label say the same thing. Start over lives inside
+ *   the menu, after the groups. The score shows "✓ N", with lives
+ *   appended in 3-lives mode.
  * - The round label is the game's own round counter, always
- *   "Round N" ("Round N of 10" in 10-question mode) — the label is
- *   shared chrome, so the word is the same in every game; the game's
- *   own voice lives in its content, not in the frame.
+ *   "Round N" ("Round N of 10" in 10-question mode), rendered by
+ *   the game as `.qs-round` — the label is shared chrome, so the
+ *   word is the same in every game; the game's own voice lives in
+ *   its content, not in the frame. The question is an h1 with
+ *   `.qs-question` in every game.
  * - GameResults: the end-of-game screen — kicker, heading, big
  *   score, Play again. One shape for every game; no mode-note
  *   restating the score.
  * - GameFooter: page furniture, same on every game — the tagline,
- *   the pool label, and the collapsed photo-credits list (the
- *   attribution the hotlinked photos require). The credits list is
- *   built from the game's own images data.
+ *   the pool label (one count + noun, e.g. "212 subjects"), and the
+ *   collapsed photo-credits list (the attribution the hotlinked
+ *   photos require). The credits list is built from the game's own
+ *   images data.
  * - The verdict wash (Kahoot pattern) lives on the game's page
  *   element: the game puts `is-correct` / `is-wrong` on its
  *   `qs-game` main, and the shared rule floods it. The wash clears
@@ -38,29 +50,6 @@ import { ArrowRightIcon, LivesHearts, RestartIcon } from "./Icons";
  *   wrong answer or give-up resets it. Games keep their own question,
  *   choice, and reveal markup and styling — the shell owns only the
  *   frame. */
-
-export function GameBar({ title, onStartOver, settingsSummary, children }) {
-  /* A pick inside the menu collapses it again, so the question is the
-   * next thing on screen. The toggle itself is not a button, so opening
-   * and closing the menu by tapping it is unaffected. */
-  const closeOnPick = (event) => {
-    if (event.target.closest && event.target.closest('button')) event.currentTarget.open = false;
-  };
-  return <header className="qs-bar">
-    <h1 className="qs-bar-title">{title}</h1>
-    <div className="qs-bar-actions">
-      <button className="pf-btn" type="button" onClick={onStartOver} aria-label="Start over"><RestartIcon /><span className="qs-start-label">Start over</span></button>
-      <details className="qs-menu" onClick={closeOnPick}>
-        <summary className="qs-menu-toggle">{settingsSummary}<span aria-hidden="true"> ▾</span></summary>
-        <div className="qs-menu-body">{children}</div>
-      </details>
-    </div>
-  </header>;
-}
-
-export function StatusLine({ round, total, correct, played, streak, lives }) {
-  return <p className="qs-status">Round {round}{total ? ` of ${total}` : ''} · {correct} right · {played} played · streak {streak}{lives !== null && lives !== undefined && <> · <LivesHearts lives={lives} /> lives</>}</p>;
-}
 
 /* Minimal top bar: exit, the settings dropdown, the score. The menu
  * is the shell's own `<details>` dropdown; a pick inside collapses it

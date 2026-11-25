@@ -1,15 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import PortalNav from '../components/PortalNav';
-import { ArrowRightIcon } from "../components/Icons";
-import { GameBar, StatusLine } from "../components/QuizShell";
+import { GameFooter, GameResults, MinimalTopBar } from "../components/QuizShell";
+import ResultReveal from '../components/ResultReveal';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
+import { DOMAINS } from '../../lib/twin-terms/domains.mjs';
 import { dealOptions, dealPair } from '../../lib/twin-terms/questions.mjs';
 import { CATEGORIES, categoryById } from '../../lib/twin-terms/categories.mjs';
 import { clearProgress, loadProgress, saveProgress } from '../../lib/twin-terms/progress.mjs';
 import { TWIN_TERM_IMAGES } from '../../lib/twin-terms/images.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
+
+/* Photo credits, in the game's own order: one line per answer that has
+ * a reveal photo, from the same images data the reveal uses. */
+const CREDITS = Object.entries(TWIN_TERM_IMAGES)
+  .filter(([, image]) => image)
+  .map(([answer, image]) => ({ id: answer, name: answer, ...image }));
 
 /* Twin Terms, played entirely in the browser: two words from one field's
  * own vocabulary, and six general categories to choose from. The graded
@@ -20,11 +26,11 @@ import { preloadImages } from '../../lib/preload-images.mjs';
  * up still teaches the specific term. The pool lives in the repo,
  * progress lives in the player's own browser storage, no server involved.
  *
- * Quiz shell v2: row 1 is PortalNav; row 2 is the shared GameBar
- * (game name + Start over + options dropdown); below it one slim
- * status line (round, right / played, streak, lives). Settings (play
- * mode only — the pool has no difficulty) live in the dropdown, closed
- * by default. Endless is the default and never ends. In lives mode,
+ * Frame is the shared minimal frame: one top row (MinimalTopBar) —
+ * exit, the settings dropdown, the score — then the round label, the
+ * question, the hints board, and the choices. Settings (play mode
+ * only — the pool has no difficulty) live in the dropdown, closed by
+ * default. Endless is the default and never ends. In lives mode,
  * a failed round (a wrong category, or a give-up) costs a life. */
 export default function Game() {
   const [pair, setPair] = useState(null);
@@ -103,7 +109,6 @@ export default function Game() {
       startFresh();
     }
   }, []);
-  useEffect(() => { heading.current?.focus(); }, [pair, pickedCategory, picked, showResults]);
 
   const chooseCategory = (categoryId) => {
     if (!pair || pickedCategory || gaveUp) return;
@@ -178,67 +183,79 @@ export default function Game() {
   const categoryRight = pickedCategory !== null && pickedCategory === pair?.category;
   const revealed = pickedCategory !== null || picked !== null;
   const revealImage = pair ? TWIN_TERM_IMAGES[pair.answer] : null;
+  const round = played + (pickedCategory === null && !gaveUp ? 1 : 0);
+  /* Focus the question when a round is dealt. While the reveal is
+   * shown it focuses its own title, so the question is not focused
+   * then; Next clears the reveal and focus returns here. */
+  useEffect(() => { if (pair && !revealed) heading.current?.focus(); }, [pair, revealed]);
+  /* The verdict wash floods the page on a category pick; the give-up
+   * path is neutral, so it gets no wash. */
+  const wash = revealed && !(over && showResults) && pickedCategory !== null ? ` is-${categoryRight ? 'correct' : 'wrong'}` : '';
 
-  return <><PortalNav/><main className="twin-terms"><GameBar title="Twin Terms" onStartOver={() => startFresh()} settingsSummary={(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label}>
-        <div className="pf-pill-group" role="group" aria-label="Play mode">
-          {PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}
+  return <main className={`twin-terms qs-game${wash}`}><div className="th-layout"><MinimalTopBar settingsSummary={(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label} onStartOver={() => startFresh()} score={correct} lives={lives} showLives={playMode === 'lives'}>
+        <div className="qs-menu-group">
+          <span className="qs-menu-label">Play mode</span>
+          <div className="pf-pill-group" role="group" aria-label="Play mode">
+            {PLAY_MODES.map((mode) => <button key={mode.id} className="pf-pill" type="button" aria-pressed={playMode === mode.id} onClick={() => switchPlayMode(mode.id)}>{mode.label}</button>)}
+          </div>
         </div>
-      </GameBar><StatusLine round={played + (pickedCategory === null && !gaveUp ? 1 : 0)} total={playMode === 'ten' ? 10 : null} correct={correct} played={played} streak={streak} lives={playMode === 'lives' ? lives : null} />
-<div className="th-layout"><section className="th-board">
+      </MinimalTopBar><section className="th-board">
     {!pair ? <div className="th-loading">Finding a curious pair…</div> : <>
-            {over && showResults ? <div className="th-finish" role="status">
-        <p className="th-result-kicker">{playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}</p>
-        <h2 ref={heading} tabIndex={-1}>Here is how you did.</h2>
-        <p className="th-final-score">{correct}<span> / {played} right</span></p>
-        <button className="pf-primary" onClick={() => startFresh()}>Play again <ArrowRightIcon /></button>
-      </div> : <>
-        <div className="th-hints" ref={revealed ? null : heading} tabIndex={-1} aria-label={`Hints: ${pair.hints[0]} and ${pair.hints[1]}`}>
+            {over && showResults ? <GameResults
+        kicker={playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}
+        correct={correct}
+        played={played}
+        onPlayAgain={() => startFresh()}
+      /> : <>
+        <p className="qs-round">Round {round}{playMode === 'ten' ? ' of 10' : ''}</p>
+        <h1 className="qs-question" ref={heading} tabIndex={-1}>{gaveUp ? 'The specific answers — pick one to see the reveal.' : 'Both words come from the same field. Pick its category.'}</h1>
+        <div className="th-hints" aria-label={`Hints: ${pair.hints[0]} and ${pair.hints[1]}`}>
           <span className="th-hint th-hint-a">{pair.hints[0]}</span>
           <span className="th-plus" aria-hidden="true">+</span>
           <span className="th-hint th-hint-b">{pair.hints[1]}</span>
           <span className="th-mark" aria-hidden="true">?</span>
         </div>
         {!gaveUp && <>
-          <p className="th-prompt">Both words come from the same field. Pick its category.</p>
           <div className="th-categories">
             {CATEGORIES.map((category) => {
-              const className = pickedCategory
+              const state = pickedCategory
                 ? category.id === pair.category
                   ? 'is-correct'
                   : category.id === pickedCategory
                     ? 'is-wrong'
                     : ''
                 : '';
-              return <button key={category.id} type="button" className={className} disabled={pickedCategory !== null} onClick={() => chooseCategory(category.id)}>{category.name}</button>;
+              return <button key={category.id} type="button" className={state ? `qs-choice ${state}` : 'qs-choice'} disabled={pickedCategory !== null} onClick={() => chooseCategory(category.id)}>{category.name}</button>;
             })}
           </div>
           <p className="th-legend">{CATEGORIES.map((category) => `${category.name} (${category.blurb})`).join(' · ')}</p>
           {pickedCategory === null && <button className="pf-btn th-give-up" type="button" onClick={giveUp}>Give up — specific choices</button>}
         </>}
         {gaveUp && <>
-          <p className="th-prompt">The specific answers — pick one to see the reveal.</p>
           <div className="th-options">
             {options.map((option) => {
-              const className = picked
+              const state = picked
                 ? option === pair.answer
                   ? 'is-correct'
                   : option === picked
                     ? 'is-wrong'
                     : ''
                 : '';
-              return <button key={option} type="button" className={className} disabled={picked !== null} onClick={() => pick(option)}>{option}</button>;
+              return <button key={option} type="button" className={state ? `qs-choice ${state}` : 'qs-choice'} disabled={picked !== null} onClick={() => pick(option)}>{option}</button>;
             })}
           </div>
         </>}
-        {revealed && <div className={`th-reveal ${categoryRight ? 'is-correct' : ''}`} role="status">
-          <p className="th-result-kicker">{pickedCategory !== null ? (categoryRight ? 'You got it!' : 'Good try!') : 'Here is the answer.'}</p>
-          <h2 ref={heading} tabIndex={-1}>These words belong to {categoryName}.</h2>
-          <p className="th-specific">The specific answer is {pair.answer}.</p>
-          {revealImage && <figure className="th-reveal-image"><img src={revealImage.thumb} alt={pair.answer} loading="lazy" decoding="async" onError={(event) => { const figure = event.currentTarget.closest('figure'); if (figure) figure.style.display = 'none'; }} /><figcaption>Photo: {revealImage.author}, {revealImage.license}, via <a href={revealImage.page} target="_blank" rel="noreferrer">Wikimedia Commons</a></figcaption></figure>}
-          <p className="th-why">{pair.why}</p>
-          <button className="pf-primary" onClick={over ? seeResults : next}>{over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}</button>
-        </div>}
+        {revealed && <ResultReveal
+          verdict={categoryRight ? 'correct' : pickedCategory !== null ? 'wrong' : 'neutral'}
+          title={categoryRight ? 'Correct' : pickedCategory !== null ? 'Incorrect' : 'Here is the answer.'}
+          answer={<p>These words belong to {categoryName}. The specific answer is {pair.answer}.</p>}
+          media={revealImage && <figure className="th-reveal-image"><img src={revealImage.thumb} alt={pair.answer} loading="lazy" decoding="async" onError={(event) => { const figure = event.currentTarget.closest('figure'); if (figure) figure.style.display = 'none'; }} /><figcaption>Photo: {revealImage.author}, {revealImage.license}, via <a href={revealImage.page} target="_blank" rel="noreferrer">Wikimedia Commons</a></figcaption></figure>}
+          brief={pair.why}
+          details={null}
+          nextLabel={over ? 'See results' : 'Next round'}
+          onNext={over ? seeResults : next}
+        />}
       </>}
     </>}
-  </section></div></main></>;
+  </section><GameFooter poolLabel={`${DOMAINS.length} domains`} credits={CREDITS} /></div></main>;
 }

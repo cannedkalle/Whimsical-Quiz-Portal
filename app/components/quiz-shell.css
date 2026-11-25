@@ -1,26 +1,32 @@
-/* Shared quiz shell styles v2 (app/components/QuizShell.jsx). Every quiz
- * game that adopts the shell gets this frame: the game bar (row 2), the
- * options dropdown, and the slim status line, with one set of sizes and
- * gaps. Game files keep their own question, choice, and reveal styles;
- * this file holds only the frame. Row 1 (PortalNav) is shared already;
+/* Shared quiz shell styles v2 (app/components/QuizShell.jsx). The ONE
+ * frame every quiz game shares: MinimalTopBar (one top row), the round
+ * label, the centred question, the verdict wash, the results screen,
+ * and the footer with photo credits. Game files keep their own
+ * question, choice, and reveal styles; this file holds only the
+ * frame and the shared tokens. Row 1 (PortalNav) is shared already;
  * the portal-row rules below trim its bottom padding on phones and zero
  * its side margins on narrow screens, so the brand sits flush with the
  * game below it and no game needs its own margin fix. This sheet only
  * loads on pages that import it. */
 
-.qs-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.qs-bar-title{margin:0;min-width:0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.3px}
-.qs-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
-.qs-bar .pf-btn{min-height:40px;padding:8px 12px;font-size:13px}
 .qs-menu{position:relative}
 .qs-menu-toggle{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 12px;border:1px solid var(--pf-control-line);border-radius:12px;background:var(--pf-surface);color:var(--pf-ink);font-size:13px;font-weight:700;cursor:pointer;list-style:none;white-space:nowrap}
 .qs-menu-toggle::-webkit-details-marker{display:none}
 .qs-menu-body{position:absolute;right:0;top:calc(100% + 6px);min-width:250px;padding:4px 16px 16px;border:1px solid var(--pf-line);border-radius:12px;background:var(--pf-surface);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:10}
 .qs-menu-group{margin-top:12px}
-.qs-menu-label{display:block;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--pf-muted)}
+.qs-menu-label{display:block;margin-bottom:8px;font-size:12px;font-weight:700;color:#4a5a4f}
 .qs-menu-body .pf-pill-group{margin:0}
+/* The old bar/status classes below are kept for Spin Draw only.
+ * Spin Draw is not a quiz and keeps its own header + status line
+ * built on `.qs-bar` / `.qs-status`; the quiz games no longer use
+ * them (GameBar + StatusLine were deleted from QuizShell.jsx in the
+ * 2026-11-23 unification). Do not reuse these classes in a quiz
+ * game — use MinimalTopBar and `.qs-round` instead. */
+.qs-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.qs-bar-title{margin:0;min-width:0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.3px}
+.qs-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
+.qs-bar .pf-btn{min-height:40px;padding:8px 12px;font-size:13px}
 .qs-status{margin:0 0 14px;color:var(--pf-muted);font-size:13px;font-weight:600}
-.qs-status .pf-icon{vertical-align:-2px}
 
 @media(max-width:600px){
   .pf-portal-nav{padding-bottom:12px}
@@ -28,9 +34,8 @@
   .qs-bar-actions{gap:6px}
   .qs-bar-title{font-size:18px}
   .qs-bar .pf-btn{min-height:36px;padding:6px 8px}
-  .qs-start-label{display:none}
-  .qs-menu-toggle{min-height:36px;padding:6px 8px;font-size:12px}
   .qs-status{font-size:12px;margin-bottom:10px}
+  .qs-menu-toggle{min-height:36px;padding:6px 8px;font-size:12px}
 }
 
 @media(max-width:760px){
@@ -98,16 +103,30 @@
   .rr-footer{padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
 }
 
-/* Minimal game frame (Kombai, 2026-11-19) — the shared frame Balls and
- * Bulb use, in QuizShell.jsx: one top row (exit, settings dropdown,
- * score), the round label, the centred question, the verdict wash, the
- * results screen, and the footer with photo credits. The other games
- * still use GameBar + StatusLine until their rollout; this block is
- * the frame they will adopt. The game column is 880px in every game;
- * a choice card is a 2px border on the control line, radius the card
- * token (24px). Small text has one size: 12px for labels (round,
- * menu, card status), 13px for the results kicker, 14px for detail
- * and body text inside the reveal. */
+/* Minimal game frame (Kombai, 2026-11-19; unified across all five
+ * quizzes 2026-11-23) — the shared frame in QuizShell.jsx: one top
+ * row (exit, settings dropdown, score), the round label, the centred
+ * question, the verdict wash, the results screen, and the footer with
+ * photo credits. The game column is 880px in every game; a choice card
+ * is a 2px border on the control line, radius the card token (24px).
+ * Small text has one size: 12px for labels (round, menu, card status),
+ * 13px for the results kicker, 14px for detail and body text inside
+ * the reveal.
+ *
+ * Small-text colour: the frame's small text uses #4a5a4f, not the
+ * --pf-muted token (#59695f). Both pass 4.5:1 on the cream paper, but
+ * #4a5a4f measures 7.2:1 on paper (#fffdf6) and 6.5:1 on the leaf
+ * verdict tint (#edf3df), so the 12px labels keep a clear margin at
+ * the smallest sizes instead of sitting just above the bar. */
+/* Shared choice token: every game's choice button also carries
+ * `.qs-choice`, so hover and press feedback is one token, not five
+ * per-game rules. A game's own hover rule may set a stronger lift or
+ * border; this token guarantees every choice lifts, marks itself,
+ * and presses visibly, with a focus-visible ring, in 150-300ms. */
+.qs-choice{transition:transform 150ms,border-color 150ms,background-color 150ms;cursor:pointer}
+.qs-choice:hover:not(:disabled){transform:translateY(-3px);border-color:var(--pf-green);background:var(--pf-leaf-soft)}
+.qs-choice:active:not(:disabled){transform:translateY(0) scale(.98)}
+.qs-choice:focus-visible{outline:2px solid var(--pf-focus);outline-offset:2px}
 /* Verdict wash (Kahoot pattern): the page floods with the verdict
  * colour the instant a choice marks itself. The game puts
  * `is-correct` / `is-wrong` on its `qs-game` main; the wash clears on
@@ -119,14 +138,14 @@
  * score — so the question is the next thing on screen. The menu opens
  * centred under the toggle instead of right-aligned. */
 .qs-top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;min-height:44px;margin-bottom:4px}
-.qs-top-x{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--pf-muted);font-size:22px;line-height:1;cursor:pointer;text-decoration:none}
+.qs-top-x{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:#4a5a4f;font-size:22px;line-height:1;cursor:pointer;text-decoration:none}
 .qs-top .qs-menu{justify-self:center}
 .qs-top .qs-menu-body{left:50%;right:auto;transform:translateX(-50%);width:min(440px,calc(100vw - 32px))}
 .qs-top .qs-menu-body .pf-pill-group + .pf-pill-group{margin-top:12px}
 .qs-settings-restart{margin-top:12px}
 .qs-top-score{font-size:16px;font-weight:800;color:var(--pf-green);white-space:nowrap}
-.qs-top-lives{color:var(--pf-muted);font-weight:700}
-.qs-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--pf-muted)}
+.qs-top-lives{color:#4a5a4f;font-weight:700}
+.qs-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#4a5a4f}
 .qs-question{font-size:clamp(24px,3vw,32px);line-height:1.17;margin:8px 0 16px;letter-spacing:-.5px;text-align:center}
 .qs-question:focus{outline:none}
 /* Verdict mark on a choice card: the tapped choice marks itself in
@@ -147,13 +166,13 @@
 /* Footer + photo credits: page furniture, same on every game — the
  * tagline, the pool label, and the collapsed credits list (the
  * attribution the hotlinked photos require). */
-.qs-footer{display:flex;justify-content:space-between;gap:15px;color:var(--pf-muted);font-size:11px;max-width:800px;margin:37px auto 5px}
+.qs-footer{display:flex;justify-content:space-between;gap:15px;color:#4a5a4f;font-size:12px;max-width:800px;margin:37px auto 5px}
 .qs-footer .qs-spark{color:#aa7013;margin-left:7px}
-.qs-credits{max-width:800px;margin:20px auto 0;color:var(--pf-muted);font-size:12px}
+.qs-credits{max-width:800px;margin:20px auto 0;color:#4a5a4f;font-size:12px}
 .qs-credits ul{list-style:none;padding:0;margin:8px 0 0}
 .qs-credits li{margin-bottom:6px;line-height:1.5}
 .qs-credits a{font-weight:700}
 
 @media(max-width:600px){
-  .qs-footer{font-size:10px;margin-top:25px;flex-wrap:wrap}
+  .qs-footer{font-size:11px;margin-top:25px;flex-wrap:wrap}
 }

@@ -23,13 +23,13 @@ const MODES = {
     pairs,
     title: 'Curated mode',
     description: 'Hand-picked matchups with a bright little fact.',
-    poolLabel: `${objects.length} inventions · ${pairs.length} curated discoveries`,
+    poolLabel: `${objects.length} inventions`,
   },
   wild: {
     pairs: wildPairs,
     title: 'Wild mode',
     description: 'Fun date pairings, from close cousins to wild contrasts.',
-    poolLabel: `${objects.length} inventions · ${wildPairs.length} wild possibilities`,
+    poolLabel: `${objects.length} inventions`,
   },
 };
 
@@ -195,13 +195,13 @@ export default function Game() {
         >
           <div className="qs-menu-group">
             <span className="qs-menu-label">Pool</span>
-            <div className="pf-pill-group" role="group" aria-label="Game modes">
+            <div className="pf-pill-group" role="group" aria-label="Pool">
               <button className="pf-pill" type="button" aria-pressed={mode === 'curated'} onClick={() => switchMode('curated')}>Curated</button>
               <button className="pf-pill" type="button" aria-pressed={mode === 'wild'} onClick={() => switchMode('wild')}>Wild</button>
             </div>
           </div>
           <div className="qs-menu-group">
-            <span className="qs-menu-label">Play</span>
+            <span className="qs-menu-label">Play mode</span>
             <div className="pf-pill-group" role="group" aria-label="Play mode">
               {PLAY_MODES.map((play) => (
                 <button className="pf-pill" key={play.id} type="button" aria-pressed={playMode === play.id} onClick={() => switchPlayMode(play.id)}>{play.label}</button>
@@ -242,7 +242,7 @@ export default function Game() {
                     }${isChosen ? ' is-chosen' : ''}`}
                   >
                     <button
-                      className="pick"
+                      className="pick qs-choice"
                       type="button"
                       disabled={answered}
                       aria-label={`Choose ${object.name}`}
@@ -356,8 +356,7 @@ export default function Game() {
                   </div>
                 </>
               }
-              detailsLabel="Dates & sources"
-              nextLabel={over ? 'See results' : 'Next discovery'}
+              nextLabel={over ? 'See results' : 'Next round'}
               onNext={handleNext}
             />
           )}

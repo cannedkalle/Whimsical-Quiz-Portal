@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import PortalNav from '../components/PortalNav';
-import { GameBar, StatusLine } from '../components/QuizShell';
+import { GameFooter, GameResults, MinimalTopBar } from '../components/QuizShell';
+import ResultReveal from '../components/ResultReveal';
 import { animals } from '../../lib/animal-outsider/animals.mjs';
 import { ANIMAL_OUTSIDER_IMAGES } from '../../lib/animal-outsider/images.mjs';
 import { preloadImages } from '../../lib/preload-images.mjs';
 import { rootWords, taxonInfo } from '../../lib/animal-outsider/taxa.mjs';
 import { getAnimalPool } from '../../lib/animal-outsider/difficulty.mjs';
 import { PLAY_MODES, isGameOver, nextLives } from '../../lib/quiz-play.mjs';
-import { ArrowRightIcon } from "../components/Icons";
 import {
   describeTaxon,
   examplesForTaxon,
@@ -28,6 +27,12 @@ import {
 
 const byId = new Map(animals.map((animal) => [animal.id, animal]));
 const maxRecentRounds = 18;
+
+/* Photo credits, in the game's own order: one line per animal that can
+ * appear, from the same images data the cards use. */
+const CREDITS = animals
+  .filter((animal) => ANIMAL_OUTSIDER_IMAGES[animal.id])
+  .map((animal) => ({ id: animal.id, name: animal.commonName, ...ANIMAL_OUTSIDER_IMAGES[animal.id] }));
 
 function addUnique(list, values) {
   const next = [...list];
@@ -133,7 +138,6 @@ export default function Game() {
   const [explorerId, setExplorerId] = useState(null);
   const recentKeys = useRef([]);
   const gridRef = useRef(null);
-  const nextRef = useRef(null);
   const focusFirstCard = useRef(false);
 
   const pool = getAnimalPool(animals, difficulty);
@@ -149,10 +153,6 @@ export default function Game() {
     setCurrent(round);
     setRoundNo(1);
   }, []);
-
-  useEffect(() => {
-    if (selectedId) nextRef.current?.focus({ preventScroll: true });
-  }, [selectedId]);
 
   useEffect(() => {
     if (focusFirstCard.current && current && !selectedId) {
@@ -254,72 +254,82 @@ export default function Game() {
   };
 
   /* Memoized so the sampled example lists do not reshuffle on unrelated
-   * re-renders; the standalone game rendered each explanation once. */
-  const answerPanel = useMemo(() => {
+   * re-renders; the standalone game rendered each explanation once.
+   * Split for the shared reveal: `answer` is the short core learning,
+   * `brief` the rejoin sentence, `details` the full relationship card
+   * and family-tree explorer behind Dive deeper. */
+  const revealContent = useMemo(() => {
     if (!current || !selectedId) return null;
-    const correctChoice = selectedId === current.outsider.id;
     const pair = current.pair;
     const outsider = current.outsider;
     const sharedInfo = describeTaxon(current.sharedClade);
     const outsiderJoin = mostRecentSharedClade(pair[0], outsider).clade;
     const outsiderParallel = findParallelBranch(outsider, outsiderJoin, current.sharedClade);
     const comparisonPath = sharedPathFor(pair[0], pair[1]);
-    return (
-      <div className={`result-card ${correctChoice ? 'correct' : 'try-again'}`}>
-        <p className="result-kicker">{correctChoice ? 'Nice reasoning!' : 'Good guess. This one teaches a twist.'}</p>
-        <h2>{outsider.commonName} is the outsider.</h2>
-        <p className="latin-reveal"><strong>{outsider.scientificName}</strong> branched away earlier than the closest pair.</p>
-        <p><strong>{pair[0].commonName} + {pair[1].commonName}</strong> are closer relatives. Their most specific shared group is <InlineTaxon name={current.sharedClade} />: {sharedInfo.kidExplanation.toLowerCase()}</p>
-        <div className="relationship-card">
-          <div className="relationship-row closest-pair">
-            <span className="row-label">Closest pair</span>
-            <strong>{pair[0].commonName}</strong>
-            <span className="plus">+</span>
-            <strong>{pair[1].commonName}</strong>
-          </div>
-          <div className="relationship-row branch-comparison">
-            <span className="row-label">Branch comparison</span>
-            <div className="branch-columns">
-              <section className="branch-card closest-branch">
-                <span className="branch-label">Closest pair branch</span>
-                <p>{pair[0].commonName} and {pair[1].commonName} meet at this newer, more specific group.</p>
-                <TaxonSummary name={current.sharedClade} />
-              </section>
-              <section className="branch-card outsider-branch-card">
-                <span className="branch-label">Outsider branch</span>
-                <p>{outsider.commonName} is on this different branch instead.</p>
-                {outsiderParallel ? (
-                  <TaxonSummary name={outsiderParallel.name} />
-                ) : (
-                  <>
-                    <strong>{outsider.commonName}</strong>
-                    <span>This animal branches away before the closest pair&apos;s newer branch.</span>
-                  </>
-                )}
-              </section>
+    return {
+      answer: (
+        <>
+          <p><strong>{outsider.commonName} is the outsider.</strong></p>
+          <p className="latin-reveal"><strong>{outsider.scientificName}</strong> branched away earlier than the closest pair.</p>
+          <p><strong>{pair[0].commonName} + {pair[1].commonName}</strong> are closer relatives. Their most specific shared group is <InlineTaxon name={current.sharedClade} />: {sharedInfo.kidExplanation.toLowerCase()}</p>
+        </>
+      ),
+      brief: (
+        <p>{outsider.commonName} is not on <InlineTaxon name={current.sharedClade} />. It rejoins the closest pair farther back, at <InlineTaxon name={outsiderJoin} />.</p>
+      ),
+      details: (
+        <>
+          <div className="relationship-card">
+            <div className="relationship-row closest-pair">
+              <span className="row-label">Closest pair</span>
+              <strong>{pair[0].commonName}</strong>
+              <span className="plus">+</span>
+              <strong>{pair[1].commonName}</strong>
             </div>
-          </div>
-          <div className="relationship-row outsider-branch">
-            <span className="row-label">Where both paths rejoin</span>
-            <div className="relationship-value">
-              <span>{outsider.commonName} is not on <InlineTaxon name={current.sharedClade} />. It rejoins the closest pair farther back, at <InlineTaxon name={outsiderJoin} />.</span>
-              <div className="parallel-branch">
-                <TaxonSummary name={outsiderJoin} />
+            <div className="relationship-row branch-comparison">
+              <span className="row-label">Branch comparison</span>
+              <div className="branch-columns">
+                <section className="branch-card closest-branch">
+                  <span className="branch-label">Closest pair branch</span>
+                  <p>{pair[0].commonName} and {pair[1].commonName} meet at this newer, more specific group.</p>
+                  <TaxonSummary name={current.sharedClade} />
+                </section>
+                <section className="branch-card outsider-branch-card">
+                  <span className="branch-label">Outsider branch</span>
+                  <p>{outsider.commonName} is on this different branch instead.</p>
+                  {outsiderParallel ? (
+                    <TaxonSummary name={outsiderParallel.name} />
+                  ) : (
+                    <>
+                      <strong>{outsider.commonName}</strong>
+                      <span>This animal branches away before the closest pair&apos;s newer branch.</span>
+                    </>
+                  )}
+                </section>
+              </div>
+            </div>
+            <div className="relationship-row outsider-branch">
+              <span className="row-label">Where both paths rejoin</span>
+              <div className="relationship-value">
+                <span>{outsider.commonName} is not on <InlineTaxon name={current.sharedClade} />. It rejoins the closest pair farther back, at <InlineTaxon name={outsiderJoin} />.</span>
+                <div className="parallel-branch">
+                  <TaxonSummary name={outsiderJoin} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <details>
-          <summary>Explore the family tree</summary>
-          <ol className="tree-list">
-            {comparisonPath.map((clade) => (
-              <TaxonStep key={clade} name={clade} />
-            ))}
-          </ol>
-          <p className="tree-note">{outsider.commonName} only rejoins them around <strong>{outsiderJoin}</strong>, so the closest pair has the more recent shared group.</p>
-        </details>
-      </div>
-    );
+          <details>
+            <summary>Explore the family tree</summary>
+            <ol className="tree-list">
+              {comparisonPath.map((clade) => (
+                <TaxonStep key={clade} name={clade} />
+              ))}
+            </ol>
+            <p className="tree-note">{outsider.commonName} only rejoins them around <strong>{outsiderJoin}</strong>, so the closest pair has the more recent shared group.</p>
+          </details>
+        </>
+      ),
+    };
   }, [current, selectedId]);
 
   const explorerTrail = useMemo(() => {
@@ -345,13 +355,18 @@ export default function Game() {
   }, [explorerId]);
 
   return (
-    <main className="ao-game">
+    <main className={revealed && !(over && showResults) ? `ao-game qs-game is-${wasCorrect ? 'correct' : 'wrong'}` : 'ao-game qs-game'}>
       <section className="play-area" aria-label="Animal Outsider quiz">
-        <PortalNav />
-        <GameBar title="Animal Outsider" onStartOver={startOver} settingsSummary={(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label}>
+        <MinimalTopBar
+          settingsSummary={`${difficulty === 'easy' ? 'Easy' : 'Standard'} · ${(PLAY_MODES.find((mode) => mode.id === playMode) || {}).label}`}
+          onStartOver={startOver}
+          score={correct}
+          lives={lives}
+          showLives={playMode === 'lives'}
+        >
           <div className="qs-menu-group">
             <span className="qs-menu-label">Difficulty</span>
-            <div className="pf-pill-group" role="group" aria-label="Choose difficulty">
+            <div className="pf-pill-group" role="group" aria-label="Difficulty">
               <button className="pf-pill" type="button" aria-pressed={difficulty === 'easy'} onClick={() => switchDifficulty('easy')}>Easy</button>
               <button className="pf-pill" type="button" aria-pressed={difficulty === 'standard'} onClick={() => switchDifficulty('standard')}>Standard</button>
             </div>
@@ -364,25 +379,25 @@ export default function Game() {
               ))}
             </div>
           </div>
-        </GameBar>
-        <StatusLine round={roundNo} total={playMode === 'ten' ? 10 : null} correct={correct} played={answered} streak={streak} lives={playMode === 'lives' ? lives : null} />
+        </MinimalTopBar>
 
         {over && showResults ? (
-          <section className="result-card" aria-labelledby="results-title">
-            <p className="result-kicker">{playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}</p>
-            <h2 id="results-title">Here is how you did.</h2>
-            <p><strong>{correct}</strong> correct out of <strong>{answered}</strong> answered.</p>
-            <button className="pf-primary" type="button" onClick={startOver}>Play again <ArrowRightIcon /></button>
-          </section>
+          <GameResults
+            kicker={playMode === 'ten' ? '10 rounds done!' : 'Out of lives!'}
+            correct={correct}
+            played={answered}
+            onPlayAgain={startOver}
+          />
         ) : (
           <>
-        <h2 className="outsider-question">Which one is the outsider?</h2>
+        <p className="qs-round">Round {roundNo}{playMode === 'ten' ? ' of 10' : ''}</p>
+        <h1 className="qs-question outsider-question">Which one is the outsider?</h1>
 
         <section className="animal-grid" ref={gridRef} aria-label="Answer choices">
           {current?.choices.map((animal, index) => (
             <button
               key={animal.id}
-              className={`animal-card${ANIMAL_OUTSIDER_IMAGES[animal.id] ? ' has-photo' : ''}${revealed && animal.id === current.outsider.id ? ' is-correct' : ''}${revealed && animal.id === selectedId && !wasCorrect ? ' is-wrong' : ''}`}
+              className={`animal-card qs-choice${ANIMAL_OUTSIDER_IMAGES[animal.id] ? ' has-photo' : ''}${revealed && animal.id === current.outsider.id ? ' is-correct' : ''}${revealed && animal.id === selectedId && !wasCorrect ? ' is-wrong' : ''}`}
               type="button"
               disabled={revealed}
               onClick={() => answer(animal.id)}
@@ -397,19 +412,20 @@ export default function Game() {
           ))}
         </section>
 
-        {revealed && (
-          <button ref={nextRef} className="pf-primary" type="button" onClick={over ? () => setShowResults(true) : startNextRound}>
-            {over ? <>See results <ArrowRightIcon /></> : <>Next round <ArrowRightIcon /></>}
-          </button>
-        )}
-
-        {revealed && (
-          <section className="answer-panel" aria-live="polite">
-            {answerPanel}
-          </section>
+        {revealed && revealContent && (
+          <ResultReveal
+            verdict={wasCorrect ? 'correct' : 'wrong'}
+            title={wasCorrect ? 'Correct' : 'Incorrect'}
+            answer={revealContent.answer}
+            brief={revealContent.brief}
+            details={revealContent.details}
+            nextLabel={over ? 'See results' : 'Next round'}
+            onNext={over ? () => setShowResults(true) : startNextRound}
+          />
         )}
           </>
         )}
+        <GameFooter poolLabel={`${animals.length} animals`} credits={CREDITS} />
       </section>
 
       <aside className={`learning-panel${revealed ? '' : ' is-locked'}`} aria-label="Taxonomy explorer">

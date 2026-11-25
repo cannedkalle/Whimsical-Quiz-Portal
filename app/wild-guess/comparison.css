@@ -42,12 +42,12 @@
 .wg-choice-grid button.is-wrong{border-color:var(--pf-error);background:var(--pf-peach-soft)}
 .wg .wg-choice-grid button.is-dim{opacity:.55}
 
-/* v8 (Kai 2026-11-19): the reveal shows the correct choice only —
- * one flowing line, short + scale, after the big verdict. No rows,
- * no winner pill, no scattered fragments: the line reads as one
- * sentence. The detail and note lines for BOTH sides sit behind
- * "Show details" (the module's Dive deeper button), correct side
- * first, each block labeled by its short. */
+/* v8 (Kai 2026-11-19; answer enriched 2026-11-23): the reveal shows
+ * both sides, not only the right answer — the correct choice's short
+ * + scale as one flowing line, then both sides' scale + detail,
+ * correct side first, each block labeled by its short. Only the
+ * notes sit behind the module's "Dive deeper" button, and only when
+ * at least one side has a note. */
 .wg-correct-choice{padding:2px 0}
 .wg-correct-line{margin:0;font-size:20px;line-height:1.4}
 .wg-correct-line strong{font-weight:800}
