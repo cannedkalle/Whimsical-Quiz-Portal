@@ -1,9 +1,25 @@
 /* Spin Draw: full-viewport drawing stage under the portal rows.
- * Frame follows the shared shell (app/components/quiz-shell.css):
- * PortalNav is row 1 (rendered outside main, flush), the title row reuses
- * .qs-bar/.qs-bar-title/.qs-bar-actions, the status line is .qs-status.
- * This file holds only the game's own controls: the mode switcher, the
- * clear button, the color palette, and the stage. */
+ * PortalNav is row 1 (rendered outside main, flush); the title row
+ * and status line are the game's own (.sd-bar / .sd-status below) —
+ * they were the shared shell's .qs-bar/.qs-status until 2026-11-25,
+ * when Spin Draw, their last user, took its own copies and the
+ * legacy shell classes were deleted. This file holds the header,
+ * the mode switcher, the clear button, the color palette, and the
+ * stage. */
+
+/* Title row: title on the left, the control cluster on the right.
+ * Ported unchanged from the retired shell classes. */
+.sd-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.sd-bar-title{margin:0;min-width:0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.3px}
+.sd-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
+.sd-status{margin:0 0 14px;color:var(--pf-muted);font-size:13px;font-weight:600}
+
+@media(max-width:600px){
+  .sd-bar{margin-bottom:8px;gap:6px}
+  .sd-bar-actions{gap:6px}
+  .sd-bar-title{font-size:18px}
+  .sd-status{font-size:12px;margin-bottom:10px}
+}
 
 .spin-draw-page {
   display: flex;

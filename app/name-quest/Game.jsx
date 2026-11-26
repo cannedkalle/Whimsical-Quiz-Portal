@@ -6,7 +6,8 @@ import nameBank from "../../lib/name-quest/name-bank.json";
 import pokemonAnimalPairs from "../../lib/name-quest/pokemon-animal-pairs.json";
 import { NAME_QUEST_IMAGES } from "../../lib/name-quest/images.mjs";
 import { preloadImages } from "../../lib/preload-images.mjs";
-import { GameFooter, GameResults, MinimalTopBar } from "../components/QuizShell";
+import { GameFooter, GameResults, MinimalTopBar, ResumeNotice } from "../components/QuizShell";
+import { clearResume, loadResume, resumeHasProgress, resumeNumber, saveResume } from "../../lib/resume.mjs";
 import ResultReveal from "../components/ResultReveal";
 
 const entries = nameBank;
@@ -173,6 +174,62 @@ const pairPrompts = animalPairs.flatMap((pair) => [
   },
 ]);
 
+const SAVE_KEY = "name-quest-save-v1";
+const entryById = new Map(entries.map((entry) => [entry.id, entry]));
+const pairPromptById = new Map(pairPrompts.map((prompt) => [prompt.id, prompt]));
+
+/* Validate a saved game against the live banks (the shared resume
+ * pattern, lib/resume.mjs): settings must still exist, counters must
+ * be sane, and the saved round — an entry, or a real-or-Pokemon pair
+ * rebuilt from its prompt ids — must still be in the banks. Only
+ * unanswered rounds are saved (the save is written when a round is
+ * dealt), so a reload mid-reveal replays that round with the score
+ * as it stood when the round was dealt. Anything off returns null
+ * and the game starts fresh. */
+function validateSave(saved) {
+  if (!Object.hasOwn(modeLabels, saved.mode)) return null;
+  if (!Object.hasOwn(levelLabels, saved.level)) return null;
+  if (!PLAY_MODES.some((play) => play.id === saved.playMode)) return null;
+  const score = resumeNumber(saved.score);
+  const rounds = resumeNumber(saved.rounds);
+  const lives = resumeNumber(saved.lives, { max: 3 });
+  const streak = resumeNumber(saved.streak);
+  if ([score, rounds, lives, streak].some((value) => value === null)) return null;
+  if (score > rounds || streak > rounds) return null;
+  const current = entryById.get(saved.currentId);
+  if (!current) return null;
+  let pair = null;
+  if (saved.mode === "realAnimal") {
+    if (!saved.pair || typeof saved.pair !== "object") return null;
+    const answerPrompt = pairPromptById.get(saved.pair.answerId);
+    if (!answerPrompt) return null;
+    if (!Array.isArray(saved.pair.choiceIds) || saved.pair.choiceIds.length !== 4) return null;
+    const choicePrompts = saved.pair.choiceIds.map((id) => pairPromptById.get(id));
+    if (choicePrompts.some((prompt) => !prompt)) return null;
+    if (!saved.pair.choiceIds.includes(saved.pair.answerId)) return null;
+    pair = {
+      id: answerPrompt.answer + "-" + answerPrompt.id,
+      target: answerPrompt.answer,
+      answer: answerPrompt,
+      choices: choicePrompts,
+    };
+  }
+  const knownId = (id) => entryById.has(id) || pairPromptById.has(id);
+  return {
+    mode: saved.mode,
+    level: saved.level,
+    playMode: saved.playMode,
+    score,
+    rounds,
+    lives,
+    streak,
+    current,
+    pair,
+    usedIds: Array.isArray(saved.usedIds) ? saved.usedIds.filter(knownId) : [],
+    recentIds: Array.isArray(saved.recentIds) ? saved.recentIds.filter(knownId) : [],
+  };
+}
+
 const hashText = (text) =>
   Array.from(text).reduce((hash, character) => hash + character.charCodeAt(0), 0);
 
@@ -333,6 +390,9 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [rounds, setRounds] = useState(0);
   const [streak, setStreak] = useState(0);
+  /* True when this page load restored a saved game with progress; the
+   * shell's resume notice shows until the player answers or moves on. */
+  const [resumed, setResumed] = useState(false);
 
   const pool = useMemo(() => getPool(level, mode), [level, mode]);
   const choices = useMemo(() => {
@@ -358,22 +418,87 @@ export default function Game() {
     preloadImages([NAME_QUEST_IMAGES[firstId]?.thumb]);
   }, []);
 
+  /* Save the game around the round now on screen (always unanswered —
+   * saves are written when a round is dealt), with any state the
+   * caller already computed; the rest falls back to current values.
+   * The counters fall back to a ref, not state: the dealing callback
+   * is memoized across the answer that changed them, so its closure
+   * can hold last round's score — the ref is always current. */
+  const countersRef = useRef({ score: 0, streak: 0, lives: 3 });
+  useEffect(() => {
+    countersRef.current = { score, streak, lives };
+  }, [score, streak, lives]);
+  const saveGame = (values) => {
+    const pairToSave = values.pairCurrent ?? pairCurrent;
+    saveResume(SAVE_KEY, {
+      mode: values.mode ?? mode,
+      level: values.level ?? level,
+      playMode: values.playMode ?? playMode,
+      lives: values.lives ?? countersRef.current.lives,
+      score: values.score ?? countersRef.current.score,
+      rounds: values.rounds ?? rounds,
+      streak: values.streak ?? countersRef.current.streak,
+      currentId: values.current ? values.current.id : current.id,
+      pair: pairToSave
+        ? { answerId: pairToSave.answer.id, choiceIds: pairToSave.choices.map((choice) => choice.id) }
+        : null,
+      usedIds: values.usedIds ?? [...usedIds],
+      recentIds: recentIdsRef.current,
+    });
+  };
+
+  /* Restore a saved game on load, or record the opening game so a
+   * reload picks it up. Runs once; the opening rounds above are the
+   * fresh-game fallback the restore replaces. */
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    const saved = loadResume(SAVE_KEY, validateSave);
+    if (!saved) {
+      saveGame({});
+      return;
+    }
+    setMode(saved.mode);
+    setLevel(saved.level);
+    setPlayMode(saved.playMode);
+    setLives(saved.lives);
+    setScore(saved.score);
+    setRounds(saved.rounds);
+    setStreak(saved.streak);
+    setCurrent(saved.current);
+    if (saved.pair) setPairCurrent(saved.pair);
+    setUsedIds(new Set(saved.usedIds));
+    recentIdsRef.current = saved.recentIds.length
+      ? saved.recentIds
+      : [saved.pair ? saved.pair.answer.id : saved.current.id];
+    setResult("idle");
+    setFeedback(
+      saved.pair
+        ? "Pick the " + saved.pair.target + "."
+        : saved.mode === "pokemon"
+          ? "Pokemon or not?"
+          : "Pick the kind of name.",
+    );
+    setResumed(resumeHasProgress({ rounds: saved.rounds, score: saved.score }));
+  }, []);
+
   const nextRound = useCallback(() => {
+    setResumed(false);
     if (mode === "realAnimal") {
       const next = pickPairNext(new Set(recentIdsRef.current));
       setPairCurrent(next);
       recentIdsRef.current = applyRecentWindow(recentIdsRef.current, next.answer.id);
-      setUsedIds((previous) => {
-        const updated = new Set(previous);
-        if (updated.size >= pairPrompts.length) updated.clear();
-        updated.add(next.answer.id);
-        return updated;
-      });
+      const nextUsed = new Set(usedIds);
+      if (nextUsed.size >= pairPrompts.length) nextUsed.clear();
+      nextUsed.add(next.answer.id);
+      setUsedIds(nextUsed);
       setResult("idle");
       setFeedback("Pick the " + next.target + ".");
       setRounds((value) => value + 1);
       /* Warm the reveal photo now, so the reveal is instant. */
       preloadImages([NAME_QUEST_IMAGES[next.answer.id]?.thumb]);
+      saveGame({ pairCurrent: next, usedIds: [...nextUsed], rounds: rounds + 1 });
 
       return;
     }
@@ -381,17 +506,16 @@ export default function Game() {
     const next = mode === "pokemon" ? pickPokemonModeNext(new Set(recentIdsRef.current), current.id) : pickNext(pool, new Set(recentIdsRef.current), current.id);
     setCurrent(next);
     recentIdsRef.current = applyRecentWindow(recentIdsRef.current, next.id);
-    setUsedIds((previous) => {
-      const updated = new Set(previous);
-      if (updated.size >= pool.length) updated.clear();
-      updated.add(next.id);
-      return updated;
-    });
+    const nextUsed = new Set(usedIds);
+    if (nextUsed.size >= pool.length) nextUsed.clear();
+    nextUsed.add(next.id);
+    setUsedIds(nextUsed);
     setResult("idle");
     setFeedback(mode === "pokemon" ? "Pokemon or not?" : "Pick the kind of name.");
     setRounds((value) => value + 1);
     /* Warm the reveal photo now, so the reveal is instant. */
     preloadImages([NAME_QUEST_IMAGES[next.id]?.thumb]);
+    saveGame({ current: next, usedIds: [...nextUsed], rounds: rounds + 1 });
 
   }, [current.id, mode, pool, usedIds]);
 
@@ -447,6 +571,7 @@ export default function Game() {
   );
 
   const finishRound = (nextResult, answerLine, counted) => {
+    setResumed(false);
     setResult(nextResult);
     setFeedback(answerLine);
     setScore((value) => value + (counted ? 1 : 0));
@@ -455,11 +580,16 @@ export default function Game() {
      * A close answer counts as scored, so it never costs a life. */
     const nextLivesCount = nextLives(playMode, lives, counted);
     setLives(nextLivesCount);
-    setOver(isGameOver(playMode, rounds + 1, nextLivesCount));
+    const gameOver = isGameOver(playMode, rounds + 1, nextLivesCount);
+    setOver(gameOver);
+    /* A finished game is cleared, never restored. Otherwise the save
+     * stays at the round just answered, as it was dealt: a reload
+     * mid-reveal replays it with the score from when it was dealt. */
+    if (gameOver) clearResume(SAVE_KEY);
   };
 
 
-  const resetGame = (nextLevel = level, nextMode = mode) => {
+  const resetGame = (nextLevel = level, nextMode = mode, nextPlayMode = playMode) => {
     const nextPool = getPool(nextLevel, nextMode);
     const next = nextMode === "realAnimal" ? undefined : nextMode === "pokemon" ? pickPokemonModeNext(new Set(recentIdsRef.current)) : pickNext(nextPool, new Set(recentIdsRef.current));
     const nextPair = nextMode === "realAnimal" ? pickPairNext(new Set(recentIdsRef.current)) : pairCurrent;
@@ -483,6 +613,22 @@ export default function Game() {
     setLives(3);
     setOver(false);
     setShowResults(false);
+    setResumed(false);
+    /* The fresh game replaces the save: cleared, then its opening
+     * round is recorded so a reload picks the new game up. */
+    clearResume(SAVE_KEY);
+    saveGame({
+      mode: nextMode,
+      level: nextLevel,
+      playMode: nextPlayMode,
+      lives: 3,
+      score: 0,
+      rounds: 0,
+      streak: 0,
+      current: next ?? undefined,
+      pairCurrent: nextPair,
+      usedIds: [nextMode === "realAnimal" ? nextPair.answer.id : next?.id ?? current.id],
+    });
   };
 
   /* Switching play mode starts a fresh game, so one mode's results never
@@ -491,7 +637,7 @@ export default function Game() {
   const switchPlayMode = (nextPlayMode) => {
     if (nextPlayMode === playMode) return;
     setPlayMode(nextPlayMode);
-    resetGame();
+    resetGame(level, mode, nextPlayMode);
   };
 
   /* The answer line for the reveal: the entry's true category, reacting
@@ -566,6 +712,7 @@ export default function Game() {
         />
       ) : (
         <section className="name-quest-board" aria-label="Name Quest round">
+          {resumed && <ResumeNotice />}
           <p className="qs-round">Round {rounds + 1}{playMode === "ten" ? " of 10" : ""}</p>
           <h1 className="qs-question">{mode === "pokemon" ? "Pokemon or not?" : mode === "realAnimal" ? "Which one is it?" : "What kind of name is this?"}</h1>
           <div className="name-card-stage">

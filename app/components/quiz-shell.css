@@ -16,25 +16,9 @@
 .qs-menu-group{margin-top:12px}
 .qs-menu-label{display:block;margin-bottom:8px;font-size:12px;font-weight:700;color:#4a5a4f}
 .qs-menu-body .pf-pill-group{margin:0}
-/* The old bar/status classes below are kept for Spin Draw only.
- * Spin Draw is not a quiz and keeps its own header + status line
- * built on `.qs-bar` / `.qs-status`; the quiz games no longer use
- * them (GameBar + StatusLine were deleted from QuizShell.jsx in the
- * 2026-11-23 unification). Do not reuse these classes in a quiz
- * game — use MinimalTopBar and `.qs-round` instead. */
-.qs-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.qs-bar-title{margin:0;min-width:0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.3px}
-.qs-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
-.qs-bar .pf-btn{min-height:40px;padding:8px 12px;font-size:13px}
-.qs-status{margin:0 0 14px;color:var(--pf-muted);font-size:13px;font-weight:600}
 
 @media(max-width:600px){
   .pf-portal-nav{padding-bottom:12px}
-  .qs-bar{margin-bottom:8px;gap:6px}
-  .qs-bar-actions{gap:6px}
-  .qs-bar-title{font-size:18px}
-  .qs-bar .pf-btn{min-height:36px;padding:6px 8px}
-  .qs-status{font-size:12px;margin-bottom:10px}
   .qs-menu-toggle{min-height:36px;padding:6px 8px;font-size:12px}
 }
 
@@ -63,7 +47,15 @@
 .rr-overlay.is-wrong{background:var(--pf-peach-soft)}
 .rr-overlay.is-neutral{background:var(--pf-paper)}
 .rr-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
-.rr-inner{margin:auto;width:100%;max-width:880px;padding:24px 16px}
+/* Short reveal content sits vertically centred in the scroll
+ * area, not top-aligned over a large empty tint: the inner's
+ * block-axis margins are auto, so they absorb the free space
+ * equally above and below. When the content is taller than the
+ * area the auto margins resolve to 0 — tall reveals start at
+ * the top and scroll exactly as before, with nothing clipped
+ * or unreachable. The inline auto margins centre the 880px
+ * column the same way. */
+.rr-inner{margin-block:auto;margin-inline:auto;width:100%;max-width:880px;padding:24px 16px}
 /* The verdict is the hero: one big word with the mark, "Correct" /
  * "Incorrect" — no kicker line, no separate title below it. The
  * heading lives in the hero, directly on the tint. */
@@ -164,6 +156,10 @@
 .qs-top-score{font-size:16px;font-weight:800;color:var(--pf-green);white-space:nowrap}
 .qs-top-lives{color:#4a5a4f;font-weight:700}
 .qs-round{margin:4px 0 8px;text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#4a5a4f}
+/* Resume notice: one muted line under the top bar when a game
+ * restored an in-progress save with progress. Same small-text
+ * colour as the round label (#4a5a4f, 7.2:1 on paper). */
+.qs-resume-note{margin:0 0 4px;text-align:center;font-size:12px;font-weight:600;color:#4a5a4f}
 .qs-question{font-size:clamp(24px,3vw,32px);line-height:1.17;margin:8px 0 16px;letter-spacing:-.5px;text-align:center}
 .qs-question:focus{outline:none}
 /* Verdict mark on a choice card: the tapped choice marks itself in

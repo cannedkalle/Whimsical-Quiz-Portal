@@ -65,7 +65,9 @@ art note under Open decisions below); the frame does not grow.
    overlay covering the whole viewport, the verdict colour flooding
    it, its content scrolling internally when taller than the screen,
    and Next pinned to the bottom of the viewport — always visible,
-   never below the fold. The reveal carries only new learning, reacts
+   never below the fold. Reveal content shorter than the scroll
+   area is vertically centred in it; taller content top-aligns
+   and scrolls. The reveal carries only new learning, reacts
    to the player's choice, and does not repeat board photos/labels
    or quote the question. A game adopts it by filling the slots
    (verdict, title, answer, media, brief, details, Next); the reveal
@@ -149,6 +151,57 @@ is uniform.
 - **Page titles**: "{Game} | Whimsical Quiz Portal" in every game
   (via `pageTitle` in `lib/names.mjs`).
 
+### Motion and focus (both sets)
+
+- **Reduced motion.** One portal-wide block in `app/globals.css`
+  (`@media (prefers-reduced-motion: reduce)`), naming exactly what
+  animates: the verdict wash, the reveal's staged entrance, the
+  choice-card hover lifts and presses, the per-game card hovers,
+  the home and gallery card hovers, and the shared button
+  transitions. Under reduced motion every one of those becomes
+  instant — the state still changes (the wash still floods, the
+  reveal still appears, a card still marks itself), it just does
+  not travel. No blanket `*` rule; a new animation joins the list
+  explicitly or does not ship. Spin Draw's disc is canvas-drawn by
+  script, not CSS, and is out of this block's reach.
+- **Focus.** One shared `:focus-visible` ring in `app/globals.css`
+  in the existing focus token (`--pf-focus`, the colour playform's
+  base rule and the shell's choice ring already use), naming the
+  shell controls, every game's choice cards, the home game cards,
+  and the Tango / Marble / Spin Draw controls. It is a floor: a game
+  rule with its own `:focus-visible` (Bulb's inset pick ring,
+  Marble's inset summary ring, the shell's 2px choice ring) keeps
+  its treatment.
+
+### Resume (both sets)
+
+Every quiz saves its in-progress game in the player's own browser
+storage, on the shared helper in `lib/resume.mjs` (save / load /
+clear, with per-game validation against the live pools). The rules:
+
+- **Save on every deal.** The save carries the settings, the round
+  counter, the score, lives and streak where the game has them, the
+  dealt/used question ids, and the current round unanswered.
+- **Validate on load.** A corrupt, stale, or shape-mismatched save
+  is discarded silently and the game starts fresh; loading never
+  throws and never restores a half-state.
+- **Clear on completion and on Start over.** A finished game never
+  comes back. Start over and settings switches replace the save
+  with the fresh game's opening round.
+- **Mid-reveal reloads land on a round boundary.** Balls, Bulb, and
+  Outsider deal the next round when one is answered, and the save
+  moves to it, so a reload mid-reveal lands on that next round with
+  the answered round already counted. Twin Terms restores its
+  give-up reveal state as saved. Name Quest saves only at deal
+  time, so a reload mid-reveal replays the round with the score as
+  it stood when the round was dealt.
+- **Notice.** When a restore carries progress (past round 1, or a
+  score on the board), the question screen shows the shell's one
+  line — "Picked up where you left off" (`ResumeNotice` in
+  QuizShell.jsx) — until the player answers or moves on. A round-1,
+  zero-score restore is silent: it is indistinguishable from a
+  fresh game.
+
 ### Home sections (`lib/apps.js`)
 
 Each app carries a `section` field. The home page renders Quiz games
@@ -190,6 +243,16 @@ shell structure at desktop sizes (one top row, centred question,
 centered at 1176px via globals.css. Formalize after mobile.
 
 ## Exceptions (not quizzes)
+
+The non-quiz games and the home page are not on the frame, but
+their card-like surfaces share its tokens (2026-11-25): home game
+cards and the Tango gallery cards carry the same 2px border and
+24px card radius as quiz choice cards, the home card hover is the
+shared treatment (lift, green border), and Marble's arena and team
+cards use the same border and radius tokens. Spin Draw's header is
+its own (`.sd-bar` / `.sd-status` in `spin-draw.css`); the legacy
+shell classes it used to borrow were retired with it as their last
+user.
 
 - Marble Battles keeps Restart in its controls and has no play modes;
   it is a simulation, not a quiz.

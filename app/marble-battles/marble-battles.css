@@ -6,9 +6,9 @@
 .marble-battles .stage-band {min-width:0;display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px;overflow:hidden}
 .marble-battles .arena-header {display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;padding:0 0 16px;border-bottom:1px solid var(--pf-line)}
 .marble-battles .arena-header .pf-brand {font-size:18px}
-.marble-battles #arena {display:block;width:100%;aspect-ratio:16/9;border:1px solid var(--pf-line);border-radius:24px;background:var(--pf-blue-soft)}
+.marble-battles #arena {display:block;width:100%;aspect-ratio:16/9;border:2px solid var(--pf-line);border-radius:var(--pf-radius-card);background:var(--pf-blue-soft)}
 .marble-battles .scoreboard {display:flex;gap:8px;flex-wrap:wrap;width:100%}
-.marble-battles .score-pill {display:inline-flex;align-items:center;gap:8px;padding:8px 12px;min-height:36px;background:white;border:1px solid var(--pf-line);border-radius:12px;font-size:13px}
+.marble-battles .score-pill {display:inline-flex;align-items:center;gap:8px;padding:8px 12px;min-height:36px;background:white;border:1px solid var(--pf-line);border-radius:var(--pf-radius-small);font-size:13px}
 .marble-battles .swatch {width:12px;height:12px;border-radius:50%;border:1px solid var(--pf-control-line)}
 .marble-battles .neutral-swatch {background:#dfe4dd}
 .marble-battles .control-panel {position:sticky;top:0;height:100dvh;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:24px;border-left:1px solid var(--pf-line);background:white;min-width:0}
@@ -44,7 +44,7 @@
 .marble-battles .control-panel {grid-template-columns:1fr}
 .marble-battles .stage-band {padding:16px}
 .marble-battles .control-panel {padding:20px}
-.marble-battles #arena {border-radius:16px}
+.marble-battles #arena {border-radius:var(--pf-radius-control)}
 .marble-battles .score-pill {font-size:12px;padding:6px 8px}
 .marble-battles .arena-header .pf-brand {font-size:17px}
 }
@@ -52,7 +52,7 @@
 .marble-battles .score-pill {font-variant-numeric:tabular-nums}
 /* Team disclosures stay mounted while their live values update. */
 .marble-battles .scoreboard {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
-.marble-battles .team-summary {min-width:0;background:var(--pf-surface);border:1px solid var(--pf-line);border-radius:16px;overflow:hidden}
+.marble-battles .team-summary {min-width:0;background:var(--pf-surface);border:2px solid var(--pf-line);border-radius:var(--pf-radius-control);overflow:hidden}
 .marble-battles .team-summary summary {position:relative;display:grid;gap:8px;min-height:88px;padding:16px 40px 16px 16px;cursor:pointer;list-style:none}
 .marble-battles .team-summary summary::-webkit-details-marker {display:none}
 .marble-battles .team-summary summary:hover {background:var(--pf-leaf-soft)}
